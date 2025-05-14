@@ -5,76 +5,83 @@
 {% endblock %}
 
 {% block body %}
-    {# Affichage de l'article #}
-    <h1>{{ article.title }}</h1>
-    <div class="article-content">
-        {{ article.content|nl2br }}
-    </div>
-
-    {# Affichage des catégories #}
-    {% if article.categories|length > 0 %}
-        <h2>Catégories :</h2>
-        <ul>
-            {% for category in article.categories %}
-                <li>{{ category.title }}</li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    {# Section des commentaires #}
-    <h2>Commentaires ({{ article.comments|length }})</h2>
-
-    {% if article.comments|length > 0 %}
-        <div class="comments">
-            {% for comment in article.comments %}
-                <div class="comment">
-                    <strong>{{ comment.author }}</strong><br>
-                    <small>{{ comment.createdAt|date('d/m/Y H:i') }}</small>
-                    <p>{{ comment.content }}</p>
+    <div class="container py-5">
+        {# Affichage de l'article #}
+        <div class="card mb-4">
+            <div class="card-body">
+                <h1 class="card-title">{{ article.title }}</h1>
+                <div class="article-content">
+                    {{ article.content|nl2br }}
                 </div>
-            {% endfor %}
+            </div>
         </div>
-    {% else %}
-        <p>Aucun commentaire pour le moment. Soyez le premier à réagir !</p>
-    {% endif %}
 
-    {# Formulaire d'ajout de commentaire #}
-    <h3>Laisser un commentaire</h3>
+        {# Affichage des catégories #}
+        {% if article.categories|length > 0 %}
+            <h3>Catégories :</h3>
+            <ul class="list-inline">
+                {% for category in article.categories %}
+                    <li class="list-inline-item">
+                        <span class="badge bg-secondary">{{ category.title }}</span>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
 
-    {{ form_start(commentForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+        {# Section des commentaires #}
+        <h2>Commentaires ({{ article.comments|length }})</h2>
+        {% if article.comments|length > 0 %}
+            <div class="list-group mb-4">
+                {% for comment in article.comments %}
+                    <div class="list-group-item">
+                        <strong>{{ comment.author }}</strong><br>
+                        <small class="text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</small>
+                        <p>{{ comment.content }}</p>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>Aucun commentaire pour le moment. Soyez le premier à réagir !</p>
+        {% endif %}
 
-    <div class="mb-3">
-        {{ form_label(commentForm.author, 'Votre nom', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(commentForm.author, {
-            'attr': {
-                'class': 'form-control',
-                'placeholder': 'Votre nom',
-                'required': 'required'
-            }
-        }) }}
-        <div class="invalid-feedback">
-            Veuillez saisir votre nom.
+        {# Formulaire d'ajout de commentaire #}
+        <h3>Laisser un commentaire</h3>
+
+        {{ form_start(commentForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+
+        <div class="mb-3">
+            {{ form_label(commentForm.author, 'Votre nom', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(commentForm.author, {
+                'attr': {
+                    'class': 'form-control',
+                    'placeholder': 'Votre nom',
+                    'required': 'required'
+                }
+            }) }}
+            <div class="invalid-feedback">
+                Veuillez saisir votre nom.
+            </div>
         </div>
+
+        <div class="mb-3">
+            {{ form_label(commentForm.content, 'Votre commentaire', {'label_attr': {'class': 'form-label'}}) }}
+            {{ form_widget(commentForm.content, {
+                'attr': {
+                    'class': 'form-control',
+                    'rows': 4,
+                    'placeholder': 'Votre commentaire...',
+                    'required': 'required'
+                }
+            }) }}
+            <div class="invalid-feedback">
+                Veuillez saisir un commentaire.
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Publier le commentaire</button>
+
+        {{ form_end(commentForm) }}
     </div>
-
-    <div class="mb-3">
-        {{ form_label(commentForm.content, 'Votre commentaire', {'label_attr': {'class': 'form-label'}}) }}
-        {{ form_widget(commentForm.content, {
-            'attr': {
-                'class': 'form-control',
-                'rows': 4,
-                'placeholder': 'Votre commentaire...',
-                'required': 'required'
-            }
-        }) }}
-        <div class="invalid-feedback">
-            Veuillez saisir un commentaire.
-        </div>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Publier le commentaire</button>
-
-    {{ form_end(commentForm) }}
 {% endblock %}
 
 {% block stylesheets %}
@@ -84,9 +91,14 @@
             line-height: 1.8;
             font-size: 1.05em;
         }
-        .comment-form {
-            max-width: 800px;
-            margin: 0 auto;
+
+        .list-group-item {
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+
+        .list-inline-item {
+            margin-right: 5px;
         }
     </style>
 {% endblock %}
