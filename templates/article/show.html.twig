@@ -1,34 +1,92 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Article{% endblock %}
+{% block title %}
+    {{ article.title }}
+{% endblock %}
 
 {% block body %}
-    <h1>Article</h1>
+    {# Affichage de l'article #}
+    <h1>{{ article.title }}</h1>
+    <div class="article-content">
+        {{ article.content|nl2br }}
+    </div>
 
-    <table class="table">
-        <tbody>
-            <tr>
-                <th>Id</th>
-                <td>{{ article.id }}</td>
-            </tr>
-            <tr>
-                <th>Title</th>
-                <td>{{ article.title }}</td>
-            </tr>
-            <tr>
-                <th>Content</th>
-                <td>{{ article.content }}</td>
-            </tr>
-            <tr>
-                <th>CreatedAt</th>
-                <td>{{ article.createdAt ? article.createdAt|date('Y-m-d H:i:s') : '' }}</td>
-            </tr>
-        </tbody>
-    </table>
+    {# Affichage des catégories #}
+    {% if article.categories|length > 0 %}
+        <h2>Catégories :</h2>
+        <ul>
+            {% for category in article.categories %}
+                <li>{{ category.title }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
 
-    <a href="{{ path('app_article_index') }}">back to list</a>
+    {# Section des commentaires #}
+    <h2>Commentaires ({{ article.comments|length }})</h2>
 
-    <a href="{{ path('app_article_edit', {'id': article.id}) }}">edit</a>
+    {% if article.comments|length > 0 %}
+        <div class="comments">
+            {% for comment in article.comments %}
+                <div class="comment">
+                    <strong>{{ comment.author }}</strong><br>
+                    <small>{{ comment.createdAt|date('d/m/Y H:i') }}</small>
+                    <p>{{ comment.content }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Aucun commentaire pour le moment. Soyez le premier à réagir !</p>
+    {% endif %}
 
-    {{ include('article/_delete_form.html.twig') }}
+    {# Formulaire d'ajout de commentaire #}
+    <h3>Laisser un commentaire</h3>
+
+    {{ form_start(commentForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+
+    <div class="mb-3">
+        {{ form_label(commentForm.author, 'Votre nom', {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(commentForm.author, {
+            'attr': {
+                'class': 'form-control',
+                'placeholder': 'Votre nom',
+                'required': 'required'
+            }
+        }) }}
+        <div class="invalid-feedback">
+            Veuillez saisir votre nom.
+        </div>
+    </div>
+
+    <div class="mb-3">
+        {{ form_label(commentForm.content, 'Votre commentaire', {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(commentForm.content, {
+            'attr': {
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Votre commentaire...',
+                'required': 'required'
+            }
+        }) }}
+        <div class="invalid-feedback">
+            Veuillez saisir un commentaire.
+        </div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Publier le commentaire</button>
+
+    {{ form_end(commentForm) }}
+{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    <style>
+        .article-content {
+            line-height: 1.8;
+            font-size: 1.05em;
+        }
+        .comment-form {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+    </style>
 {% endblock %}
