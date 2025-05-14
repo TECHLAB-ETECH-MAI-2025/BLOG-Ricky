@@ -96,6 +96,7 @@ class Article
     {
         if (!$this->categories->contains($category)) {
             $this->categories->add($category);
+            $category->addArticle($this);
         }
 
         return $this;
@@ -103,7 +104,9 @@ class Article
 
     public function removeCategory(Category $category): static
     {
-        $this->categories->removeElement($category);
+        if ($this->categories->removeElement($category)) {
+            $category->removeArticle($this);
+        }
 
         return $this;
     }
