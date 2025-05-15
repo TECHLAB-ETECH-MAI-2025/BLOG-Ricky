@@ -14,7 +14,6 @@ class CategoryForm extends AbstractType
         $builder
             ->add('title')
             ->add('description')
-            ->add('createdAt')
         ;
     }
 
