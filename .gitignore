@@ -1,4 +1,4 @@
-### Environnement Symfony
+### Environnement Symfony ###
 /.env.local
 /.env.*.local
 /.env.local.php
@@ -9,15 +9,16 @@
 /vendor/
 /public/bundles/
 
-### PHPUnit
+### PHPUnit ###
 /phpunit.xml
 .phpunit.result.cache
 
-### Asset Mapper
+### Asset Mapper ###
 /public/assets/
 /assets/vendor/
 
-### Webpack Encore
+### Webpack Encore ###
 /node_modules/
+/public/build/
 npm-debug.log
 yarn-error.log
