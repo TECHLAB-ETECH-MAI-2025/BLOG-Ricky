@@ -1,4 +1,4 @@
-import './bootstrap.js';
+
 // Importe la config Symfony
 
 /*
@@ -10,6 +10,6 @@ import 'bootstrap'; // Bootstrap JS (inclut Popper)
 import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
 
 // Tu peux aussi ajouter ton propre CSS après Bootstrap si besoin :
-import './styles/app.css';
+import './styles/app.scss';
 
 console.log('This log comes from assets/app.js - welcome to AssetMapper! 🎉');

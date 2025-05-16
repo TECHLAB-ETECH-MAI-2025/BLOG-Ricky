@@ -4,9 +4,8 @@
         <meta charset="UTF-8">
         <title>{% block title %}Welcome!{% endblock %}</title>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text><text y=%221.3em%22 x=%220.2em%22 font-size=%2276%22 fill=%22%23fff%22>sf</text></svg>">
-        
         {% block stylesheets %}
-            {{ encore_entry_link_tags('app') }}  <!-- Inclut le CSS compilé (Bootstrap et app.css) -->
+            {{ encore_entry_link_tags('app') }}
         {% endblock %}
     </head>
     <body>
@@ -14,13 +13,6 @@
             <h1>Bienvenue dans votre application Symfony!</h1>
             <button class="btn btn-primary">Test de bouton Bootstrap</button>
             {% block content %}{% endblock %}
-        {% endblock %}
-
-        {% block javascripts %}
-            {{ encore_entry_script_tags('app') }}  <!-- Inclut les fichiers JS compilés (Bootstrap, app.js) -->
-            {% block importmap %}
-                {{ importmap('app') }}  <!-- Ajout de importmap si utilisé -->
-            {% endblock %}
         {% endblock %}
     </body>
 </html>

@@ -1,32 +1,23 @@
-###> symfony/framework-bundle ###
+### Environnement Symfony
 /.env.local
-/.env.local.php
 /.env.*.local
+/.env.local.php
+
 /config/secrets/prod/prod.decrypt.private.php
-/public/bundles/
+
 /var/
 /vendor/
-###< symfony/framework-bundle ###
+/public/bundles/
 
-###> phpunit/phpunit ###
+### PHPUnit
 /phpunit.xml
 .phpunit.result.cache
-###< phpunit/phpunit ###
 
-###> symfony/phpunit-bridge ###
-.phpunit.result.cache
-/phpunit.xml
-###< symfony/phpunit-bridge ###
-
-###> symfony/asset-mapper ###
+### Asset Mapper
 /public/assets/
 /assets/vendor/
-###< symfony/asset-mapper ###
 
-###> symfony/webpack-encore-bundle ###
+### Webpack Encore
 /node_modules/
-# On garde public/build dans le repo pour éviter d'exiger yarn chez le destinataire :
-# /public/build/
 npm-debug.log
 yarn-error.log
-###< symfony/webpack-encore-bundle ###
