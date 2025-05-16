@@ -47,10 +47,9 @@ class Category
         return $this->title;
     }
 
-    public function setTitle(string $title): static
+    public function setTitle(string $title): self
     {
         $this->title = $title;
-
         return $this;
     }
 
@@ -59,10 +58,9 @@ class Category
         return $this->description;
     }
 
-    public function setDescription(string $description): static
+    public function setDescription(string $description): self
     {
         $this->description = $description;
-
         return $this;
     }
 
@@ -85,7 +83,7 @@ class Category
         return $this->articles;
     }
 
-    public function addArticle(Article $article): static
+    public function addArticle(Article $article): self
     {
         if (!$this->articles->contains($article)) {
             $this->articles->add($article);
@@ -95,7 +93,7 @@ class Category
         return $this;
     }
 
-    public function removeArticle(Article $article): static
+    public function removeArticle(Article $article): self
     {
         if ($this->articles->removeElement($article)) {
             $article->removeCategory($this);
