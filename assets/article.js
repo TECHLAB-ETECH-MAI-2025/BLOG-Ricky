@@ -1,4 +1,5 @@
 import $ from 'jquery';
+import * as bootstrap from 'bootstrap';
 
 $(document).ready(function () {
     // Système de commentaires en AJAX
@@ -25,6 +26,9 @@ $(document).ready(function () {
                     // Ajouter le nouveau commentaire à la liste
                     $commentsList.prepend(response.commentHtml);
 
+                    // Supprimer le message "Aucun commentaire..." s’il existe
+                    $('#no-comments-msg').remove();
+
                     // Mettre à jour le compteur de commentaires
                     $commentsCount.text(response.commentsCount);
 
@@ -47,20 +51,32 @@ $(document).ready(function () {
         });
     });
 
-    // Système de "j'aime" en AJAX
-    const $likeButton = $('.like-button');
-    const articleId = $likeButton.data('article-id');
+    // Système de "j'aime" en AJAX (via API)
+    $('.like-button').on('click', function () {
+        const $btn = $(this);
+        const articleId = $btn.data('article-id');
 
-    $likeButton.on('click', function () {
         $.ajax({
-            url: `/article/${articleId}/like`,
+            url: `/api/article/${articleId}/like`,
             method: 'POST',
             dataType: 'json',
             success: function (response) {
                 if (response.success) {
-                    $likeButton.toggleClass('liked', response.liked);
                     $('#likes-count').text(response.likesCount);
+
+                    const $label = $btn.find('.like-label');
+
+                    if (response.liked) {
+                        $label.text('💔 Je n’aime plus');
+                    } else {
+                        $label.text('❤️ J’aime');
+                    }
+                } else {
+                    showAlert('danger', 'Une erreur est survenue lors du like.');
                 }
+            },
+            error: function () {
+                showAlert('danger', 'Impossible de traiter votre like.');
             }
         });
     });
@@ -77,7 +93,8 @@ $(document).ready(function () {
         $('#alerts-container').append($alert);
 
         setTimeout(() => {
-            $alert.alert('close');
+            const alertInstance = bootstrap.Alert.getOrCreateInstance($alert[0]);
+            alertInstance.close();
         }, 5000);
     }
 });

@@ -26,13 +26,20 @@ class ArticleRepository extends ServiceEntityRepository
         string $orderColumn,
         string $orderDir
     ): array {
+        // Colonnes autorisées pour le tri
+        $validColumns = ['id', 'title', 'createdAt', 'commentsCount', 'likesCount', 'categories'];
+        if (!in_array($orderColumn, $validColumns, true)) {
+            $orderColumn = 'id';
+        }
+
+        // Requête principale avec jointures
         $qb = $this->createQueryBuilder('a')
             ->leftJoin('a.categories', 'c')
             ->leftJoin('a.comments', 'com')
             ->leftJoin('a.likes', 'l')
             ->addSelect('c')
-            ->addSelect('com')
-            ->addSelect('l')
+            ->addSelect('COUNT(DISTINCT com.id) AS HIDDEN commentsCount')
+            ->addSelect('COUNT(DISTINCT l.id) AS HIDDEN likesCount')
             ->groupBy('a.id');
 
         // Appliquer la recherche si nécessaire
@@ -41,40 +48,52 @@ class ArticleRepository extends ServiceEntityRepository
                 ->setParameter('search', '%' . $search . '%');
         }
 
-        // Total sans filtre
-        $totalCount = (int) $this->createQueryBuilder('a')
-            ->select('COUNT(a.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
-
-        // Total avec filtre
-        $filteredCountQb = clone $qb;
-        $filteredCount = (int) $filteredCountQb
-            ->select('COUNT(DISTINCT a.id)')
-            ->getQuery()
-            ->getSingleScalarResult();
-
         // Gestion du tri
-        if ($orderColumn === 'commentsCount') {
-            $qb->addSelect('COUNT(com.id) AS HIDDEN commentsCount')
-                ->orderBy('commentsCount', $orderDir);
-        } elseif ($orderColumn === 'likesCount') {
-            $qb->addSelect('COUNT(l.id) AS HIDDEN likesCount')
-                ->orderBy('likesCount', $orderDir);
-        } elseif ($orderColumn === 'categories') {
-            $qb->orderBy('c.title', $orderDir);
-        } else {
-            $qb->orderBy($orderColumn, $orderDir);
+        switch ($orderColumn) {
+            case 'commentsCount':
+                $qb->orderBy('commentsCount', $orderDir);
+                break;
+            case 'likesCount':
+                $qb->orderBy('likesCount', $orderDir);
+                break;
+            case 'categories':
+                $qb->orderBy('c.title', $orderDir);
+                break;
+            case 'id':
+            case 'title':
+            case 'createdAt':
+                $qb->orderBy('a.' . $orderColumn, $orderDir);
+                break;
         }
 
         // Pagination
         $qb->setFirstResult($start)
             ->setMaxResults($length);
 
+        $data = $qb->getQuery()->getResult();
+
+        // Total général
+        $totalCount = (int) $this->createQueryBuilder('a')
+            ->select('COUNT(a.id)')
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        // Total filtré
+        $filteredQb = $this->createQueryBuilder('a')
+            ->select('COUNT(DISTINCT a.id)')
+            ->leftJoin('a.categories', 'c');
+
+        if ($search) {
+            $filteredQb->andWhere('a.title LIKE :search OR c.title LIKE :search')
+                ->setParameter('search', '%' . $search . '%');
+        }
+
+        $filteredCount = (int) $filteredQb->getQuery()->getSingleScalarResult();
+
         return [
-            'data' => $qb->getQuery()->getResult(),
+            'data' => $data,
             'totalCount' => $totalCount,
-            'filteredCount' => $filteredCount
+            'filteredCount' => $filteredCount,
         ];
     }
 

@@ -10,8 +10,8 @@ $(document).ready(function () {
         serverSide: true,
         responsive: true,
         ajax: {
-            url: '/api/articles',
-            type: 'POST'
+            url: '/api/article/list',
+            type: 'GET'
         },
         columns: [
             { data: 'id' },
@@ -23,7 +23,7 @@ $(document).ready(function () {
             { data: 'actions', orderable: false, searchable: false }
         ],
         language: {
-            url: '//cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
+            url: 'https://cdn.datatables.net/plug-ins/1.13.4/i18n/fr-FR.json'
         },
         order: [[0, 'desc']]
     });
@@ -44,7 +44,7 @@ $(document).ready(function () {
 
         searchTimeout = setTimeout(() => {
             $.ajax({
-                url: '/api/articles/search',
+                url: '/api/article/search',
                 method: 'GET',
                 data: { q: query },
                 dataType: 'json',

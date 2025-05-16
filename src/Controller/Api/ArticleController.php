@@ -18,14 +18,14 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/article', name: 'api_article_')]
 final class ArticleController extends AbstractController
 {
-    #[Route('/list', name: 'list', methods: ['POST'])]
+    #[Route('/list', name: 'list', methods: ['GET'])]
     public function list(Request $request, ArticleRepository $articleRepository): JsonResponse
     {
-        $draw = (int) $request->request->get('draw', 0);
-        $start = (int) $request->request->get('start', 0);
-        $length = (int) $request->request->get('length', 10);
-        $search = $request->request->all('search')['value'] ?? null;
-        $orders = $request->request->all('order') ?? [];
+        $draw = (int) $request->query->get('draw', 0);
+        $start = (int) $request->query->get('start', 0);
+        $length = (int) $request->query->get('length', 10);
+        $search = $request->query->all('search')['value'] ?? null;
+        $orders = $request->query->all('order') ?? [];
 
         $columns = [
             0 => 'a.id',

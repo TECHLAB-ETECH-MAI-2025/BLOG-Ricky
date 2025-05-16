@@ -6,6 +6,7 @@ use App\Entity\Article;
 use App\Entity\Comment;
 use App\Form\ArticleForm;
 use App\Form\CommentForm;
+use App\Repository\ArticleLikeRepository;
 use App\Repository\ArticleRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Knp\Component\Pager\PaginatorInterface;
@@ -39,10 +40,12 @@ final class ArticleController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $article->setCreatedAt(new \DateTimeImmutable());
             $entityManager->persist($article);
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_article_index');
+            $this->addFlash('success', 'L\'article a été créé avec succès.');
+            return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('article/new.html.twig', [
@@ -51,26 +54,25 @@ final class ArticleController extends AbstractController
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET', 'POST'])]
-    public function show(Article $article, Request $request, EntityManagerInterface $entityManager): Response
+    public function show(Article $article, Request $request, EntityManagerInterface $entityManager, ArticleLikeRepository $likeRepository): Response
     {
+        // Commentaire
         $comment = new Comment();
         $comment->setArticle($article);
 
         $form = $this->createForm(CommentForm::class, $comment);
-        $form->handleRequest($request);
 
-        if ($form->isSubmitted() && $form->isValid()) {
-            $entityManager->persist($comment);
-            $entityManager->flush();
-
-            $this->addFlash('success', 'Votre commentaire a été publié avec succès !');
-
-            return $this->redirectToRoute('app_article_show', ['id' => $article->getId()]);
-        }
+        // Vérification du like
+        $ipAddress = $request->getClientIp();
+        $isLiked = $likeRepository->findOneBy([
+            'article' => $article,
+            'ipAddress' => $ipAddress,
+        ]) !== null;
 
         return $this->render('article/show.html.twig', [
             'article' => $article,
             'commentForm' => $form->createView(),
+            'is_liked' => $isLiked,
         ]);
     }
 
@@ -83,7 +85,8 @@ final class ArticleController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $entityManager->flush();
 
-            return $this->redirectToRoute('app_article_index');
+            $this->addFlash('success', 'L\'article a été modifié avec succès.');
+            return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
         }
 
         return $this->render('article/edit.html.twig', [
@@ -98,8 +101,9 @@ final class ArticleController extends AbstractController
         if ($this->isCsrfTokenValid('delete' . $article->getId(), $request->request->get('_token'))) {
             $entityManager->remove($article);
             $entityManager->flush();
+            $this->addFlash('success', 'L\'article a été supprimé avec succès.');
         }
 
-        return $this->redirectToRoute('app_article_index');
+        return $this->redirectToRoute('app_article_index', [], Response::HTTP_SEE_OTHER);
     }
 }

@@ -22,9 +22,13 @@
     </div>
 
     <div class="mb-3 text-muted">
-        <i class="bi bi-heart-fill text-danger"></i> {{ article.likes|length }} j'aime
+        <i class="bi bi-heart-fill text-danger"></i><span id="likes-count">{{ article.likes|length }}</span> j'aime
         &nbsp;|&nbsp;
         <i class="bi bi-calendar3"></i> Publié le {{ article.createdAt|date('d/m/Y H:i') }}
+
+        <button type="button" class="btn btn-sm btn-outline-danger like-button" data-article-id="{{ article.id }}">
+            <span class="like-label">{% if is_liked %}💔 Je n’aime plus{% else %}❤️ J’aime{% endif %}</span>
+        </button>
     </div>
 
     <div class="card mb-4 shadow-sm">
@@ -50,23 +54,32 @@
 
     <hr>
 
-    <h3>Commentaires ({{ article.comments|length }})</h3>
+    <h3>Commentaires (<span id="comments-count">{{ article.comments|length }}</span>)</h3>
 
-    {% if article.comments|length > 0 %}
-        <div class="list-group mb-4">
+    <div id="comments-list" class="list-group mb-4">
+        {% if article.comments|length > 0 %}
             {% for comment in article.comments|sort((a, b) => b.createdAt <=> a.createdAt) %}
                 {% include 'comment/_comment.html.twig' with {'comment': comment} %}
             {% endfor %}
-        </div>
-    {% else %}
-        <p>Aucun commentaire pour le moment. Soyez le premier à réagir !</p>
+        {% endif %}
+    </div>
+
+    {% if article.comments|length == 0 %}
+        <p id="no-comments-msg">Aucun commentaire pour le moment. Soyez le premier à réagir !</p>
     {% endif %}
 
     <hr>
 
     <h4>Ajouter un commentaire</h4>
 
-    {{ form_start(commentForm, {'attr': {'class': 'needs-validation', 'novalidate': 'novalidate'}}) }}
+    {{ form_start(commentForm, {
+        attr: {
+            class: 'needs-validation',
+            novalidate: 'novalidate',
+            id: 'comment-form',
+            action: path('api_article_comment', { id: article.id })
+        }
+    }) }}
 
     <div class="mb-3">
         {{ form_label(commentForm.author, 'Votre nom') }}
