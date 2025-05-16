@@ -3,16 +3,16 @@
 namespace App\Controller;
 
 use App\Entity\Article;
-use App\Form\ArticleForm;
 use App\Entity\Comment;
+use App\Form\ArticleForm;
 use App\Form\CommentForm;
 use App\Repository\ArticleRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Knp\Component\Pager\PaginatorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
-use Knp\Component\Pager\PaginatorInterface;
 
 #[Route('/article', name: 'app_article_')]
 final class ArticleController extends AbstractController
@@ -24,11 +24,7 @@ final class ArticleController extends AbstractController
             ->orderBy('a.createdAt', 'DESC')
             ->getQuery();
 
-        $pagination = $paginator->paginate(
-            $query,
-            $request->query->getInt('page', 1),
-            6
-        );
+        $pagination = $paginator->paginate($query, $request->query->getInt('page', 1), 6);
 
         return $this->render('article/index.html.twig', [
             'pagination' => $pagination,
@@ -50,7 +46,6 @@ final class ArticleController extends AbstractController
         }
 
         return $this->render('article/new.html.twig', [
-            'article' => $article,
             'form' => $form,
         ]);
     }
@@ -92,15 +87,15 @@ final class ArticleController extends AbstractController
         }
 
         return $this->render('article/edit.html.twig', [
-            'article' => $article,
             'form' => $form,
+            'article' => $article,
         ]);
     }
 
     #[Route('/{id}/delete', name: 'delete', methods: ['POST'])]
     public function delete(Request $request, Article $article, EntityManagerInterface $entityManager): Response
     {
-        if ($this->isCsrfTokenValid('delete' . $article->getId(), $request->getPayload()->getString('_token'))) {
+        if ($this->isCsrfTokenValid('delete' . $article->getId(), $request->request->get('_token'))) {
             $entityManager->remove($article);
             $entityManager->flush();
         }
