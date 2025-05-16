@@ -3,13 +3,12 @@
 {% block title %}Accueil{% endblock %}
 
 {% block body %}
-    <div class="container mt-4">
-        <h1>Bienvenue sur notre site !</h1>
+    <div class="container py-5 text-center">
+        <h1>Bienvenue sur le blog Symfony !</h1>
+        <p class="lead">Explorez nos derniers articles et partagez vos commentaires.</p>
 
-        <p>Ceci est la page d'accueil. Vous pouvez :</p>
-        <ul>
-            <li><a href="{{ path('app_article_index') }}">Voir les articles</a></li>
-            <li><a href="{{ path('app_category_index') }}">Voir les catégories</a></li>
-        </ul>
+        <a href="{{ path('app_article_index') }}" class="btn btn-primary mt-4">
+            <i class="bi bi-journal-text"></i> Voir les articles
+        </a>
     </div>
 {% endblock %}

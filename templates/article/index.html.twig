@@ -1,6 +1,16 @@
 {% extends 'base.html.twig' %}
 
-{% block title %}Articles{% endblock %}
+{% block title %}Liste des articles{% endblock %}
+
+{% block stylesheets %}
+    {{ parent() }}
+    {{ encore_entry_link_tags('article_list') }}
+{% endblock %}
+
+{% block javascripts %}
+    {{ parent() }}
+    {{ encore_entry_script_tags('article_list') }}
+{% endblock %}
 
 {% block body %}
 <div class="container py-5">
@@ -14,43 +24,21 @@
         </a>
     </div>
 
-    {% if pagination|length > 0 %}
-        <div class="row g-4">
-            {% for article in pagination %}
-                <div class="col-md-6 col-lg-4">
-                    <div class="card h-100 shadow-sm">
-                        <div class="card-body d-flex flex-column">
-                            <h5 class="card-title">{{ article.title }}</h5>
-                            <p class="card-text text-muted small mb-2">
-                                Publié le {{ article.createdAt ? article.createdAt|date('d/m/Y H:i') : '—' }}
-                            </p>
-                            <p class="card-text flex-grow-1">
-                                {{ article.content|length > 120 ? article.content|slice(0, 120) ~ '…' : article.content }}
-                            </p>
-                        </div>
-                        <div class="card-footer bg-transparent border-0">
-                            <div class="d-flex gap-2">
-                                <a href="{{ path('app_article_show', {'id': article.id}) }}" class="btn btn-outline-primary">
-                                    <i class="bi bi-eye"></i> Voir l'article
-                                </a>
-                                <a href="{{ path('app_article_edit', {'id': article.id}) }}" class="btn btn-outline-warning">
-                                    <i class="bi bi-pencil"></i> Modifier
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
-        </div>
-
-        {# Pagination controls #}
-        <div class="mt-4">
-            {{ knp_pagination_render(pagination) }}
-        </div>
-    {% else %}
-        <div class="alert alert-info text-center">
-            Aucun article trouvé.
-        </div>
-    {% endif %}
+    <table id="articles-table" class="table table-bordered table-hover align-middle text-center">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Titre</th>
+                <th>Catégories</th>
+                <th>Commentaires</th>
+                <th>J'aime</th>
+                <th>Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {# DataTables remplira le tbody en AJAX #}
+        </tbody>
+    </table>
 </div>
 {% endblock %}
