@@ -19,6 +19,9 @@
 
 ### Webpack Encore ###
 /node_modules/
-/public/build/
 npm-debug.log
 yarn-error.log
+/public/build/
+
+### npm ###
+/package-lock.json
