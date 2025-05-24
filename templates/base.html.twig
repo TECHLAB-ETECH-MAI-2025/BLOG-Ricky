@@ -13,7 +13,7 @@
         {{ encore_entry_script_tags('app') }}
     {% endblock %}
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <div id="alerts-container" class="position-fixed top-0 end-0 p-3" style="z-index: 1055;"></div>
 
     <header class="bg-dark text-white py-3">
@@ -27,7 +27,9 @@
                 {% endif %}
 
                 {% if app.user %}
-                    <span class="me-3">{{ app.user.userIdentifier }}</span>
+                    <span class="me-3">
+                        <i class="bi bi-person-fill me-1"></i>{{ app.user.userIdentifier }}
+                    </span>
                     <a href="{{ path('app_logout') }}" class="btn btn-outline-light btn-sm">Déconnexion</a>
                 {% else %}
                     <a href="{{ path('app_login') }}" class="btn btn-outline-light btn-sm me-2">Connexion</a>
@@ -37,7 +39,7 @@
         </div>
     </header>
 
-    <main class="container py-4">
+    <main class="container py-4 flex-grow-1">
         {% block body %}{% endblock %}
     </main>
 

@@ -72,31 +72,32 @@
 
     <h4>Ajouter un commentaire</h4>
 
-    {{ form_start(commentForm, {
-        attr: {
-            class: 'needs-validation',
-            novalidate: 'novalidate',
-            id: 'comment-form',
-            action: path('api_article_comment', { id: article.id })
-        }
-    }) }}
+    {% if app.user %}
+        {{ form_start(commentForm, {
+            attr: {
+                class: 'needs-validation',
+                novalidate: 'novalidate',
+                id: 'comment-form',
+                action: path('api_article_comment', { id: article.id })
+            }
+        }) }}
 
-    <div class="mb-3">
-        {{ form_label(commentForm.author, 'Votre nom') }}
-        {{ form_widget(commentForm.author, {'attr': {'class': 'form-control', 'required': true}}) }}
-        <div class="invalid-feedback">Veuillez saisir votre nom.</div>
-    </div>
+        <div class="mb-3">
+            {{ form_label(commentForm.content) }}
+            {{ form_widget(commentForm.content, {'attr': {'class': 'form-control', 'rows': 4, 'required': true}}) }}
+            <div class="invalid-feedback">Veuillez saisir un commentaire.</div>
+        </div>
 
-    <div class="mb-3">
-        {{ form_label(commentForm.content, 'Votre commentaire') }}
-        {{ form_widget(commentForm.content, {'attr': {'class': 'form-control', 'rows': 4, 'required': true}}) }}
-        <div class="invalid-feedback">Veuillez saisir un commentaire.</div>
-    </div>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-chat-dots"></i> Publier
+        </button>
 
-    <button type="submit" class="btn btn-primary">
-        <i class="bi bi-chat-dots"></i> Publier
-    </button>
-
-    {{ form_end(commentForm) }}
+        {{ form_end(commentForm) }}
+    {% else %}
+        <div class="alert alert-info">
+            Vous devez être connecté pour poster un commentaire. 
+            <a href="{{ path('app_login') }}">Se connecter</a>.
+        </div>
+    {% endif %}
 </div>
 {% endblock %}

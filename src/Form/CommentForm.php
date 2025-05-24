@@ -14,14 +14,6 @@ class CommentForm extends AbstractType
     public function buildForm(FormBuilderInterface $builder, array $options): void
     {
         $builder
-            ->add('author', TextType::class, [
-                'label' => 'Votre nom',
-                'attr' => [
-                    'class' => 'form-control',
-                    'placeholder' => 'Votre nom',
-                    'required' => true
-                ]
-            ])
             ->add('content', TextareaType::class, [
                 'label' => 'Votre commentaire',
                 'attr' => [

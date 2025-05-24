@@ -1,6 +1,6 @@
 <div class="list-group-item">
     <div class="d-flex justify-content-between mb-1">
-        <strong>{{ comment.author }}</strong>
+        <strong>{{ comment.user.fullName }}</strong>
         <small class="text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</small>
     </div>
     <p class="mb-0">{{ comment.content|nl2br }}</p>

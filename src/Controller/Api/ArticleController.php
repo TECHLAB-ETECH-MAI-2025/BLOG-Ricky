@@ -94,6 +94,14 @@ final class ArticleController extends AbstractController
     #[Route('/{id}/comment', name: 'comment', methods: ['POST'])]
     public function addComment(Article $article, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
+        $user = $this->getUser();
+        if (!$user instanceof \App\Entity\User) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Vous devez être connecté pour commenter.'
+            ], 401);
+        }
+
         $comment = new Comment();
         $comment->setArticle($article);
         $comment->setCreatedAt(new \DateTimeImmutable());
@@ -102,6 +110,8 @@ final class ArticleController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
+            $comment->setUser($user);
+
             $entityManager->persist($comment);
             $entityManager->flush();
 
