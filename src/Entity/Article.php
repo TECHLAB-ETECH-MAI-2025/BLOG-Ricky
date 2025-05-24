@@ -25,21 +25,12 @@ class Article
     #[ORM\Column]
     private ?\DateTimeImmutable $createdAt = null;
 
-    /**
-     * @var Collection<int, Category>
-     */
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'articles')]
     private Collection $categories;
 
-    /**
-     * @var Collection<int, Comment>
-     */
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'article', cascade: ['remove'])]
     private Collection $comments;
 
-    /**
-     * @var Collection<int, ArticleLike>
-     */
     #[ORM\OneToMany(targetEntity: ArticleLike::class, mappedBy: 'article', orphanRemoval: true)]
     private Collection $likes;
 

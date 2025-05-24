@@ -22,13 +22,18 @@
     </div>
 
     <div class="mb-3 text-muted">
-        <i class="bi bi-heart-fill text-danger"></i><span id="likes-count">{{ article.likes|length }}</span> j'aime
+        <i class="bi bi-heart-fill text-danger"></i>
+        <span id="likes-count">{{ article.likes|length }}</span> j'aime
         &nbsp;|&nbsp;
         <i class="bi bi-calendar3"></i> Publié le {{ article.createdAt|date('d/m/Y H:i') }}
 
-        <button type="button" class="btn btn-sm btn-outline-danger like-button" data-article-id="{{ article.id }}">
-            <span class="like-label">{% if is_liked %}💔 Je n’aime plus{% else %}❤️ J’aime{% endif %}</span>
-        </button>
+        {% if app.user %}
+            <button type="button" class="btn btn-sm btn-outline-danger like-button" data-article-id="{{ article.id }}">
+                <span class="like-label">
+                    {% if is_liked %}💔 Je n’aime plus{% else %}❤️ J’aime{% endif %}
+                </span>
+            </button>
+        {% endif %}
     </div>
 
     <div class="card mb-4 shadow-sm">

@@ -2,6 +2,7 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\User;
 use App\Entity\Article;
 use App\Entity\ArticleLike;
 use App\Entity\Comment;
@@ -95,7 +96,8 @@ final class ArticleController extends AbstractController
     public function addComment(Article $article, Request $request, EntityManagerInterface $entityManager): JsonResponse
     {
         $user = $this->getUser();
-        if (!$user instanceof \App\Entity\User) {
+
+        if (!$user) {
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Vous devez être connecté pour commenter.'
@@ -142,11 +144,18 @@ final class ArticleController extends AbstractController
         EntityManagerInterface $entityManager,
         ArticleLikeRepository $likeRepository
     ): JsonResponse {
-        $ipAddress = $request->getClientIp();
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse([
+                'success' => false,
+                'message' => 'Vous devez être connecté pour liker un article.'
+            ], 401);
+        }
 
         $existingLike = $likeRepository->findOneBy([
             'article' => $article,
-            'ipAddress' => $ipAddress
+            'user' => $user
         ]);
 
         if ($existingLike) {
@@ -162,7 +171,7 @@ final class ArticleController extends AbstractController
 
         $like = new ArticleLike();
         $like->setArticle($article);
-        $like->setIpAddress($ipAddress);
+        $like->setUser($user);
         $like->setCreatedAt(new \DateTimeImmutable());
 
         $entityManager->persist($like);

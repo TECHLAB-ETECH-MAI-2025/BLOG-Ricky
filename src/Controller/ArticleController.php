@@ -56,7 +56,7 @@ final class ArticleController extends AbstractController
     }
 
     #[Route('/{id}', name: 'show', methods: ['GET', 'POST'])]
-    public function show(Article $article, Request $request, EntityManagerInterface $entityManager, ArticleLikeRepository $likeRepository): Response
+    public function show(Article $article, ArticleLikeRepository $likeRepository): Response
     {
         // Commentaire
         $comment = new Comment();
@@ -64,12 +64,16 @@ final class ArticleController extends AbstractController
 
         $form = $this->createForm(CommentForm::class, $comment);
 
-        // Vérification du like
-        $ipAddress = $request->getClientIp();
-        $isLiked = $likeRepository->findOneBy([
-            'article' => $article,
-            'ipAddress' => $ipAddress,
-        ]) !== null;
+        // Vérification du like par l'utilisateur connecté
+        $user = $this->getUser();
+        $isLiked = false;
+
+        if ($user) {
+            $isLiked = $likeRepository->findOneBy([
+                'article' => $article,
+                'user' => $user,
+            ]) !== null;
+        }
 
         return $this->render('article/show.html.twig', [
             'article' => $article,
