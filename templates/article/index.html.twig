@@ -56,10 +56,14 @@
         <a href="{{ path('app_home') }}" class="btn btn-outline-primary">
             <i class="bi bi-house-door"></i> Accueil
         </a>
+
         <h1 class="mb-0">Liste des articles</h1>
-        <a href="{{ path('app_article_new') }}" class="btn btn-outline-secondary">
-            <i class="bi bi-plus-lg"></i> Nouvel article
-        </a>
+
+        {% if is_granted('ROLE_ADMIN') %}
+            <a href="{{ path('app_article_new') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-plus-lg"></i> Nouvel article
+            </a>
+        {% endif %}
     </div>
 
     {# Recherche en temps réel #}

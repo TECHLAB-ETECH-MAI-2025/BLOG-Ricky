@@ -3,17 +3,19 @@
         <i class="bi bi-eye"></i> Voir
     </a>
 
-    <a href="{{ path('app_article_edit', {'id': article.id}) }}" class="btn btn-sm btn-outline-warning">
-        <i class="bi bi-pencil"></i> Modifier
-    </a>
+    {% if is_granted('ROLE_ADMIN') %}
+        <a href="{{ path('app_article_edit', {'id': article.id}) }}" class="btn btn-sm btn-outline-warning">
+            <i class="bi bi-pencil"></i> Modifier
+        </a>
 
-    <form method="post"
-          action="{{ path('app_article_delete', {'id': article.id}) }}"
-          onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer l’article « {{ article.title }} » ?');"
-          class="d-inline">
-        <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ article.id) }}">
-        <button class="btn btn-sm btn-outline-danger">
-            <i class="bi bi-trash"></i> Supprimer
-        </button>
-    </form>
+        <form method="post"
+              action="{{ path('app_article_delete', {'id': article.id}) }}"
+              onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer l’article « {{ article.title }} » ?');"
+              class="d-inline">
+            <input type="hidden" name="_token" value="{{ csrf_token('delete' ~ article.id) }}">
+            <button class="btn btn-sm btn-outline-danger">
+                <i class="bi bi-trash"></i> Supprimer
+            </button>
+        </form>
+    {% endif %}
 </div>
