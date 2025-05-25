@@ -9,8 +9,10 @@
         {{ form_errors(form.categories) }}
     </div>
 
-    <button type="submit" class="btn btn-outline-primary">
-        <i class="bi bi-check-circle"></i> {{ button_label|default('Publier maintenant') }}
-    </button>
+    <div class="d-flex justify-content-end gap-2 mt-4">
+        <button type="submit" class="btn btn-outline-primary">
+            <i class="bi bi-check-circle"></i> {{ button_label|default('Publier maintenant') }}
+        </button>
+    </div>
 
 {{ form_end(form) }}

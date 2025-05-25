@@ -1,4 +1,16 @@
-{{ form_start(form) }}
-    {{ form_widget(form) }}
-    <button class="btn">{{ button_label|default('Save') }}</button>
-{{ form_end(form) }}
+<div class="container mt-4">
+    {{ form_start(form, {
+        'attr': {
+            'class': 'needs-validation',
+            'novalidate': 'novalidate',
+            'id': 'form-id'
+        }
+    }) }}
+        <div class="mb-3">
+            {{ form_row(form.title) }}
+        </div>
+        <div class="mb-3">
+            {{ form_row(form.description) }}
+        </div>
+    {{ form_end(form) }}
+</div>

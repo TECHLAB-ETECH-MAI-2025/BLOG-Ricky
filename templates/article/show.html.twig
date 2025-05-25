@@ -28,7 +28,7 @@
         <i class="bi bi-calendar3"></i> Publié le {{ article.createdAt|date('d/m/Y H:i') }}
 
         {% if app.user %}
-            <button type="button" class="btn btn-sm btn-outline-danger like-button" data-article-id="{{ article.id }}">
+            <button type="button" class="btn btn-sm btn-outline-danger like-button ms-3" data-article-id="{{ article.id }}">
                 <span class="like-label">
                     {% if is_liked %}💔 Je n’aime plus{% else %}❤️ J’aime{% endif %}
                 </span>
