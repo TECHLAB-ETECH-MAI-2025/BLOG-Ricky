@@ -23,15 +23,9 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(length: 180)]
     private ?string $email = null;
 
-    /**
-     * @var list<string> The user roles
-     */
     #[ORM\Column]
     private array $roles = [];
 
-    /**
-     * @var string The hashed password
-     */
     #[ORM\Column]
     private ?string $password = null;
 
@@ -47,11 +41,14 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column]
     private ?bool $isVerified = null;
 
-    /**
-     * @var Collection<int, ArticleLike>
-     */
     #[ORM\OneToMany(mappedBy: 'user', targetEntity: ArticleLike::class, orphanRemoval: true)]
     private Collection $articleLikes;
+
+    #[ORM\OneToMany(mappedBy: 'sender', targetEntity: Message::class, orphanRemoval: true)]
+    private Collection $sentMessages;
+
+    #[ORM\OneToMany(mappedBy: 'receiver', targetEntity: Message::class, orphanRemoval: true)]
+    private Collection $receivedMessages;
 
     public function __construct()
     {
@@ -59,6 +56,8 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         $this->roles = ['ROLE_USER'];
         $this->isVerified = false;
         $this->articleLikes = new ArrayCollection();
+        $this->sentMessages = new ArrayCollection();
+        $this->receivedMessages = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -89,9 +88,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return array_unique($roles);
     }
 
-    /**
-     * @param list<string> $roles
-     */
     public function setRoles(array $roles): static
     {
         $this->roles = $roles;
@@ -111,7 +107,6 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function eraseCredentials(): void
     {
-        // Clear sensitive temporary data if stored
     }
 
     public function getFirstName(): ?string
@@ -190,6 +185,64 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->articleLikes->removeElement($like)) {
             if ($like->getUser() === $this) {
                 $like->setUser(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Message>
+     */
+    public function getSentMessages(): Collection
+    {
+        return $this->sentMessages;
+    }
+
+    public function addSentMessage(Message $message): static
+    {
+        if (!$this->sentMessages->contains($message)) {
+            $this->sentMessages[] = $message;
+            $message->setSender($this);
+        }
+
+        return $this;
+    }
+
+    public function removeSentMessage(Message $message): static
+    {
+        if ($this->sentMessages->removeElement($message)) {
+            if ($message->getSender() === $this) {
+                $message->setSender(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, Message>
+     */
+    public function getReceivedMessages(): Collection
+    {
+        return $this->receivedMessages;
+    }
+
+    public function addReceivedMessage(Message $message): static
+    {
+        if (!$this->receivedMessages->contains($message)) {
+            $this->receivedMessages[] = $message;
+            $message->setReceiver($this);
+        }
+
+        return $this;
+    }
+
+    public function removeReceivedMessage(Message $message): static
+    {
+        if ($this->receivedMessages->removeElement($message)) {
+            if ($message->getReceiver() === $this) {
+                $message->setReceiver(null);
             }
         }
 

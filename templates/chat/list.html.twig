@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Démarrer une conversation{% endblock %}
+
+{% block body %}
+    <h2 class="mb-4">Utilisateurs disponibles</h2>
+
+    <ul class="list-group">
+        {% for user in users %}
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+                <span>{{ user.fullName }}</span>
+                <a href="{{ path('chat_index', {'receiverId': user.id}) }}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-chat-dots me-1"></i> Discuter
+                </a>
+            </li>
+        {% else %}
+            <li class="list-group-item">Aucun autre utilisateur trouvé.</li>
+        {% endfor %}
+    </ul>
+{% endblock %}

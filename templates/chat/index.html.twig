@@ -1,0 +1,76 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Chat avec {{ receiver.getFullName() }}{% endblock %}
+
+{% block body %}
+<div class="container my-5">
+    <h2 class="mb-4">Chat avec {{ receiver.getFullName() }}</h2>
+
+    <div id="messages-container" class="border rounded p-3 mb-4" style="height: 300px; overflow-y: auto;">
+        {# Initial render — optional fallback #}
+        {% include 'chat/_messages.html.twig' %}
+    </div>
+
+    <div>
+        <input type="hidden" id="receiver-id" value="{{ receiver.id }}">
+        {{ form_start(form, { attr: { class: 'mb-3', id: 'chat-form' } }) }}
+            <div class="mb-3">
+                {{ form_widget(form.content, {
+                    attr: { class: 'form-control', placeholder: 'Écrivez votre message ici...' }
+                }) }}
+            </div>
+            <button type="submit" id="send-message" class="btn btn-outline-primary">
+                <i class="bi bi-send-fill me-1"></i> Envoyer
+            </button>
+        {{ form_end(form) }}
+    </div>
+</div>
+
+{# AJAX Chat Script #}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    $(document).ready(function () {
+        function loadMessages() {
+            const receiverId = $('#receiver-id').val();
+
+            $.ajax({
+                url: '/chat/messages?receiver=' + receiverId,
+                method: 'GET',
+                success: function (response) {
+                    $('#messages-container').html(response);
+                },
+                error: function () {
+                    console.error('Erreur lors du chargement des messages');
+                }
+            });
+        }
+
+        $('#send-message').click(function (e) {
+            e.preventDefault();
+            const content = $('#message_form_content').val();
+            const receiverId = $('#receiver-id').val();
+
+            if (!content.trim()) return;
+
+            $.ajax({
+                url: '/chat/send',
+                method: 'POST',
+                data: {
+                    content: content,
+                    receiver: receiverId
+                },
+                success: function () {
+                    $('#message_form_content').val('');
+                    loadMessages();
+                },
+                error: function () {
+                    alert('Erreur lors de l\'envoi du message');
+                }
+            });
+        });
+
+        // Charger les messages toutes les 2 secondes
+        setInterval(loadMessages, 2000);
+    });
+</script>
+{% endblock %}
