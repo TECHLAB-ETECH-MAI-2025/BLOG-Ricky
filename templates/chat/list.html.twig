@@ -8,8 +8,8 @@
     <ul class="list-group">
         {% for user in users %}
             <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span>{{ user.fullName }}</span>
-                <a href="{{ path('chat_index', {'receiverId': user.id}) }}" class="btn btn-outline-primary btn-sm">
+                <span><i class="bi bi-person-circle me-2"></i>{{ user.fullName }}</span>
+                <a href="{{ path('chat_index', {'receiverId': user.id}) }}" class="btn btn-outline-primary">
                     <i class="bi bi-chat-dots me-1"></i> Discuter
                 </a>
             </li>
