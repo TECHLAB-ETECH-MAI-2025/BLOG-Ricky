@@ -20,17 +20,9 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class ArticleController extends AbstractController
 {
     #[Route(name: 'index', methods: ['GET'])]
-    public function index(Request $request, ArticleRepository $articleRepository, PaginatorInterface $paginator): Response
+    public function index(): Response
     {
-        $query = $articleRepository->createQueryBuilder('a')
-            ->orderBy('a.createdAt', 'DESC')
-            ->getQuery();
-
-        $pagination = $paginator->paginate($query, $request->query->getInt('page', 1), 6);
-
-        return $this->render('article/index.html.twig', [
-            'pagination' => $pagination,
-        ]);
+        return $this->render('article/index.html.twig');
     }
 
     #[IsGranted('ROLE_ADMIN')]
