@@ -3,48 +3,58 @@
 {% block title %}Inscription{% endblock %}
 
 {% block body %}
-<div class="container mt-5" style="max-width: 600px;">
+<div class="container mt-5 mb-4" style="max-width: 600px;">
     <h1 class="text-center mb-4">Créer un compte</h1>
 
     {{ form_start(registrationForm, {'attr': {'class': 'border rounded p-4 shadow-sm bg-light'}}) }}
 
-        <div class="mb-3">
-            {{ form_label(registrationForm.firstName, 'Prénom', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(registrationForm.firstName, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(registrationForm.firstName) }}
-        </div>
+    <div class="mb-3">
+        {{ form_label(registrationForm.firstName, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(registrationForm.firstName) }}
+        {% for error in registrationForm.firstName.vars.errors %}
+            <div class="text-danger ms-2">{{ error.message }}</div>
+        {% endfor %}
+    </div>
 
-        <div class="mb-3">
-            {{ form_label(registrationForm.lastName, 'Nom', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(registrationForm.lastName, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(registrationForm.lastName) }}
-        </div>
+    <div class="mb-3">
+        {{ form_label(registrationForm.lastName, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(registrationForm.lastName) }}
+        {% for error in registrationForm.lastName.vars.errors %}
+            <div class="text-danger ms-2">{{ error.message }}</div>
+        {% endfor %}
+    </div>
 
-        <div class="mb-3">
-            {{ form_label(registrationForm.email, 'Email', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(registrationForm.email, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(registrationForm.email) }}
-        </div>
+    <div class="mb-3">
+        {{ form_label(registrationForm.email, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(registrationForm.email) }}
+        {% for error in registrationForm.email.vars.errors %}
+            <div class="text-danger ms-2">{{ error.message }}</div>
+        {% endfor %}
+    </div>
 
-        <div class="mb-3">
-            {{ form_label(registrationForm.plainPassword.first, 'Mot de passe', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(registrationForm.plainPassword.first, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(registrationForm.plainPassword.first) }}
-        </div>
+    <div class="mb-3">
+        {{ form_label(registrationForm.plainPassword.first, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(registrationForm.plainPassword.first) }}
+        {% for error in registrationForm.plainPassword.first.vars.errors %}
+            <div class="text-danger ms-2">{{ error.message }}</div>
+        {% endfor %}
+    </div>
 
-        <div class="mb-3">
-            {{ form_label(registrationForm.plainPassword.second, 'Confirmer le mot de passe', {'label_attr': {'class': 'form-label'}}) }}
-            {{ form_widget(registrationForm.plainPassword.second, {'attr': {'class': 'form-control'}}) }}
-            {{ form_errors(registrationForm.plainPassword.second) }}
-        </div>
+    <div class="mb-3">
+        {{ form_label(registrationForm.plainPassword.second, null, {'label_attr': {'class': 'form-label'}}) }}
+        {{ form_widget(registrationForm.plainPassword.second) }}
+        {% for error in registrationForm.plainPassword.second.vars.errors %}
+            <div class="text-danger ms-2">{{ error.message }}</div>
+        {% endfor %}
+    </div>
 
-        <div class="d-grid mb-3">
-            <button type="submit" class="btn btn-success">S'inscrire</button>
-        </div>
+    <div class="d-grid mb-3">
+        <button type="submit" class="btn btn-success">S'inscrire</button>
+    </div>
 
-        <div class="text-center">
-            <a href="{{ path('app_login') }}">Vous avez déjà un compte ? Se connecter</a>
-        </div>
+    <div class="text-center">
+        <a href="{{ path('app_login') }}">Vous avez déjà un compte ? Se connecter</a>
+    </div>
 
     {{ form_end(registrationForm) }}
 </div>

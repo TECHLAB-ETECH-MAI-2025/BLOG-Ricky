@@ -10,7 +10,6 @@ use Symfony\Component\Form\Extension\Core\Type\RepeatedType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\OptionsResolver\OptionsResolver;
-use Symfony\Component\Validator\Constraints\Email;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 
@@ -21,67 +20,54 @@ class RegistrationForm extends AbstractType
         $builder
             ->add('firstName', TextType::class, [
                 'label' => 'Prénom',
-                'required' => false,
                 'attr' => [
                     'class' => 'form-control',
-                    'placeholder' => 'Votre prénom'
-                ]
+                    'placeholder' => 'Votre prénom',
+                ],
             ])
             ->add('lastName', TextType::class, [
                 'label' => 'Nom',
-                'required' => false,
                 'attr' => [
                     'class' => 'form-control',
-                    'placeholder' => 'Votre nom'
-                ]
+                    'placeholder' => 'Votre nom',
+                ],
             ])
             ->add('email', EmailType::class, [
                 'label' => 'Email',
                 'attr' => [
                     'class' => 'form-control',
-                    'placeholder' => 'exemple@domaine.com'
+                    'placeholder' => 'Votre adresse email',
                 ],
-                'constraints' => [
-                    new NotBlank([
-                        'message' => 'Veuillez entrer une adresse email',
-                    ]),
-                    new Email([
-                        'message' => 'L\'adresse email n\'est pas valide',
-                    ])
-                ]
             ])
             ->add('plainPassword', RepeatedType::class, [
                 'type' => PasswordType::class,
                 'mapped' => false,
+                'invalid_message' => 'Les mots de passe doivent correspondre.',
                 'first_options' => [
                     'label' => 'Mot de passe',
                     'attr' => [
+                        'placeholder' => 'Choisissez un mot de passe',
                         'class' => 'form-control',
-                        'autocomplete' => 'new-password',
-                        'placeholder' => 'Minimum 8 caractères'
                     ],
                 ],
                 'second_options' => [
                     'label' => 'Confirmer le mot de passe',
                     'attr' => [
+                        'placeholder' => 'Confirmez le mot de passe',
                         'class' => 'form-control',
-                        'autocomplete' => 'new-password',
-                        'placeholder' => 'Répétez votre mot de passe'
                     ],
                 ],
-                'invalid_message' => 'Les mots de passe ne correspondent pas.',
                 'constraints' => [
                     new NotBlank([
-                        'message' => 'Veuillez entrer un mot de passe',
+                        'message' => 'Le mot de passe est requis.',
                     ]),
                     new Length([
-                        'min' => 8,
-                        'minMessage' => 'Votre mot de passe doit comporter au moins {{ limit }} caractères',
+                        'min' => 6,
+                        'minMessage' => 'Le mot de passe doit contenir au moins {{ limit }} caractères.',
                         'max' => 4096,
                     ]),
                 ],
-            ])
-        ;
+            ]);
     }
 
     public function configureOptions(OptionsResolver $resolver): void
