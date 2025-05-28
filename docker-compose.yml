@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  symfony:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8000:80"
+    environment:
+      DATABASE_URL: mysql://symfony:symfony@database:3306/symfony_app?serverVersion=8.0
+      MERCURE_URL: http://mercure/.well-known/mercure
+      MERCURE_PUBLIC_URL: http://localhost:3001/.well-known/mercure
+      MERCURE_JWT_SECRET: 'your-256-bit-secret-key-here-change-this-in-production'
+    depends_on:
+      - database
+      - mercure
+
+  database:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: symfony_app
+      MYSQL_USER: symfony
+      MYSQL_PASSWORD: symfony
+      MYSQL_ROOT_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  mercure:
+    image: dunglas/mercure
+    ports:
+      - "3001:80"
+    environment:
+      SERVER_NAME: ':80'
+      MERCURE_PUBLISHER_JWT_KEY: 'your-256-bit-secret-key-here-change-this-in-production'
+      MERCURE_SUBSCRIBER_JWT_KEY: 'your-256-bit-secret-key-here-change-this-in-production'
+      MERCURE_EXTRA_DIRECTIVES: |
+        cors_origins http://localhost:8000
+        anonymous
+        subscriptions
+        publish_origins http://localhost:8000
+    volumes:
+      - mercure_data:/data
+      - mercure_config:/config
+
+volumes:
+  mysql_data:
+  mercure_data:
+  mercure_config:
