@@ -7,8 +7,8 @@ use App\Entity\User;
 use App\Form\MessageForm;
 use App\Repository\UserRepository;
 use App\Repository\MessageRepository;
-use App\Service\MercureService;
 use App\Service\JWTService;
+use App\Message\MercureChatMessage;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,19 +16,17 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Messenger\MessageBusInterface;
 
 final class ChatController extends AbstractController
 {
-    private MercureService $mercureService;
     private EntityManagerInterface $entityManager;
     private JWTService $jwtService;
 
     public function __construct(
-        MercureService $mercureService,
         EntityManagerInterface $entityManager,
         JWTService $jwtService
     ) {
-        $this->mercureService = $mercureService;
         $this->entityManager = $entityManager;
         $this->jwtService = $jwtService;
     }
@@ -133,7 +131,7 @@ final class ChatController extends AbstractController
     }
 
     #[Route('/api/chat/send', name: 'chat_send', methods: ['POST'])]
-    public function sendMessage(Request $request): JsonResponse
+    public function sendMessage(Request $request, MessageBusInterface $bus): JsonResponse
     {
         try {
             /** @var User $currentUser */
@@ -162,6 +160,7 @@ final class ChatController extends AbstractController
                 return $this->json(['success' => false, 'error' => 'Destinataire introuvable.'], 404);
             }
 
+            // Création et persistance du message
             $message = new Message();
             $message->setSender($currentUser);
             $message->setReceiver($receiver);
@@ -171,8 +170,8 @@ final class ChatController extends AbstractController
             $this->entityManager->persist($message);
             $this->entityManager->flush();
 
-            // Envoi via MercureService (publication privée sécurisée)
-            $this->mercureService->publishChatMessage(
+            // Dispatch du message Mercure de façon asynchrone via Symfony Messenger
+            $bus->dispatch(new MercureChatMessage(
                 $currentUser->getId(),
                 $receiverId,
                 [
@@ -182,7 +181,7 @@ final class ChatController extends AbstractController
                     'username' => $currentUser->getFullName(),
                     'createdAt' => $message->getCreatedAt()->format(DATE_ATOM),
                 ]
-            );
+            ));
 
             return $this->json([
                 'success' => true,
