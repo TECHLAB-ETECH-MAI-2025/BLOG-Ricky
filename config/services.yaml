@@ -20,5 +20,7 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    # JWTService : injection du secret Mercure JWT
+    App\Service\JWTService:
+        arguments:
+            $mercureJwtSecret: '%env(MERCURE_JWT_SECRET)%'

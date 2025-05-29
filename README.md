@@ -25,6 +25,15 @@ Cela va :
 - Construire l'image PHP (avec Symfony)
 - Démarrer les services : `symfony`, `mysql`, `mercure`
 
+### 3. Installer les dépendances PHP à l’intérieur du conteneur
+
+```bash
+docker exec -it <nom_du_conteneur_symfony> bash
+composer install
+```
+
+> 💡 Utilisez `docker ps` pour obtenir le nom exact du conteneur Symfony s’il n’est pas connu.
+
 ---
 
 ## 💻 Accès
@@ -41,14 +50,6 @@ Cela va :
 ```bash
 docker exec -it <nom_du_conteneur_symfony> bash
 ```
-
-Tu peux aussi faire :
-
-```bash
-docker ps
-```
-
-Et repérer le nom exact, par ex. `blog-ricky-symfony-1`.
 
 ### 2. Exécuter les migrations
 
@@ -73,10 +74,11 @@ docker compose down -v --remove-orphans
 docker compose up -d --build
 ```
 
-Ensuite, relancer les migrations et fixtures :
+Ensuite, relancer les commandes à l’intérieur du conteneur :
 
 ```bash
 docker exec -it <nom_du_conteneur_symfony> bash
+composer install
 php bin/console doctrine:migrations:migrate
 php bin/console doctrine:fixtures:load
 ```

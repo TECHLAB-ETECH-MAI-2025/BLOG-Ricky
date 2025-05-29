@@ -15,7 +15,7 @@ class MercureService
     }
 
     /**
-     * Publier un nouveau message de chat à un topic spécifique
+     * Publier un nouveau message de chat à un topic spécifique sécurisé
      */
     public function publishChatMessage(int $senderId, int $receiverId, array $messageData): void
     {
@@ -27,7 +27,8 @@ class MercureService
             json_encode([
                 'message' => $messageData,
                 'timestamp' => time(),
-            ])
+            ]),
+            true // Message privé
         );
 
         $this->hub->publish($update);

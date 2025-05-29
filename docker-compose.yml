@@ -38,11 +38,11 @@ services:
       SERVER_NAME: ':80'
       MERCURE_PUBLISHER_JWT_KEY: 'your-256-bit-secret-key-here-change-this-in-production'
       MERCURE_SUBSCRIBER_JWT_KEY: 'your-256-bit-secret-key-here-change-this-in-production'
+      MERCURE_ANONYMOUS: 0
       MERCURE_EXTRA_DIRECTIVES: |
         cors_origins http://localhost:8000
-        anonymous
-        subscriptions
         publish_origins http://localhost:8000
+        subscriptions
     volumes:
       - mercure_data:/data
       - mercure_config:/config

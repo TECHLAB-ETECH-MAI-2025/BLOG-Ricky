@@ -7,7 +7,6 @@
     <h2 class="mb-4">Chat avec {{ receiver.getFullName() }}</h2>
 
     <div id="messages-container" class="border rounded p-3 mb-4" style="height: 300px; overflow-y: auto;">
-        {# Rendu initial (fallback au cas où Mercure ne marche pas) #}
         {% include 'chat/_messages.html.twig' %}
     </div>
 
@@ -28,60 +27,185 @@
 </div>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script src="https://unpkg.com/@mercure/client"></script>
 <script>
     $(document).ready(function () {
-        const userId = $('#current-user-id').val();
-        const receiverId = $('#receiver-id').val();
+        const userId = parseInt($('#current-user-id').val());
+        const receiverId = parseInt($('#receiver-id').val());
 
-        // Envoi du message en AJAX
-        $('#send-message').click(function (e) {
+        const $messagesContainer = $('#messages-container');
+        const $messageInput = $('#message_form_content');
+        const $sendButton = $('#send-message');
+
+        let $status = $('#connection-status');
+        if ($status.length === 0) {
+            $status = $(`
+                <div id="connection-status" class="alert alert-info d-flex align-items-center mb-3" role="alert">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <span class="status-message">Connexion en cours...</span>
+                </div>
+            `);
+            $messagesContainer.before($status);
+        }
+
+        function showError(message) {
+            $status.removeClass('alert-info alert-success')
+                .addClass('alert-danger')
+                .find('.status-message').text(message);
+            $status.find('i').attr('class', 'bi bi-exclamation-triangle-fill me-2');
+        }
+
+        function showInfo(message) {
+            $status.removeClass('alert-danger alert-success')
+                .addClass('alert-info')
+                .find('.status-message').text(message);
+            $status.find('i').attr('class', 'bi bi-info-circle me-2');
+        }
+
+        $sendButton.click(function (e) {
             e.preventDefault();
-            const content = $('#message_form_content').val().trim();
-            if (!content) return;
+            const content = $messageInput.val().trim();
+            if (!content) {
+                showError('Le message ne peut pas être vide.');
+                return;
+            }
+
+            $sendButton.prop('disabled', true);
+            showInfo('Envoi en cours...');
 
             $.ajax({
-                url: '/chat/send',
+                url: '/api/chat/send',
                 method: 'POST',
                 data: {
                     content: content,
                     receiver: receiverId
                 },
-                success: function () {
-                    $('#message_form_content').val('');
+                success: function (response) {
+                    if (response.success) {
+                        $messageInput.val('');
+                        showInfo('Message envoyé.');
+                    } else if (response.error) {
+                        showError('Erreur : ' + response.error);
+                    } else {
+                        showError('Erreur inconnue lors de l\'envoi.');
+                    }
                 },
-                error: function () {
-                    alert('Erreur lors de l\'envoi du message');
+                error: function (jqXHR) {
+                    let errMsg = 'Erreur lors de l\'envoi du message';
+                    if (jqXHR.responseJSON && jqXHR.responseJSON.error) {
+                        errMsg = 'Erreur : ' + jqXHR.responseJSON.error;
+                    }
+                    showError(errMsg);
+                },
+                complete: function () {
+                    $sendButton.prop('disabled', false);
                 }
             });
         });
 
-        // Abonnement Mercure
-        const url = new URL('http://localhost:3001/.well-known/mercure');
-        const topic = `chat/${Math.min(userId, receiverId)}/${Math.max(userId, receiverId)}`;
-        url.searchParams.append('topic', topic);
+        let eventSource = null;
+        let reconnectTimeout = null;
 
-        const eventSource = new EventSource(url);
+        function decodeJWT(token) {
+            try {
+                const payload = token.split('.')[1];
+                const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
+                const jsonPayload = decodeURIComponent(atob(base64).split('').map(c =>
+                    '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2)
+                ).join(''));
+                return JSON.parse(jsonPayload);
+            } catch (e) {
+                console.error("Erreur de décodage du JWT :", e);
+                return null;
+            }
+        }
 
-        eventSource.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            const msg = data.message;
-            if (!msg || msg.chatId !== undefined && msg.chatId != receiverId) return;
+        function connectWithToken(token) {
+            const decoded = decodeJWT(token);
+            if (!decoded || !decoded.exp) {
+                showError("Token Mercure invalide.");
+                return;
+            }
 
-            const isCurrentUser = msg.userId == userId;
+            const now = Math.floor(Date.now() / 1000);
+            const expiresIn = decoded.exp - now;
+            const reconnectIn = Math.max(expiresIn - 60, 10) * 1000;
 
-            const container = document.getElementById('messages-container');
-            const messageElement = document.createElement('div');
-            messageElement.className = isCurrentUser ? 'text-end mb-2' : 'text-start mb-2';
-            messageElement.innerHTML = `
-                <div class="d-inline-block p-2 rounded ${isCurrentUser ? 'bg-primary text-white' : 'bg-light text-dark'}">
-                    <strong>${msg.username}</strong><br>
-                    ${msg.content}
-                </div>
-            `;
-            container.appendChild(messageElement);
-            container.scrollTop = container.scrollHeight;
-        };
+            console.log(`Token valide pour ${expiresIn}s. Reconnexion planifiée dans ${reconnectIn / 1000}s.`);
+
+            if (reconnectTimeout) clearTimeout(reconnectTimeout);
+            reconnectTimeout = setTimeout(fetchTokenAndConnect, reconnectIn);
+
+            const topic = `chat/${Math.min(userId, receiverId)}/${Math.max(userId, receiverId)}`;
+            const url = new URL('http://localhost:3001/.well-known/mercure');
+            url.searchParams.append('topic', topic);
+            document.cookie = 'mercureAuthorization=' + token + '; path=/.well-known/mercure; samesite=strict';
+
+            if (eventSource) eventSource.close();
+            eventSource = new EventSource(url.toString(), { withCredentials: true });
+
+            eventSource.onopen = () => {
+                showInfo('Connecté au serveur de messages.');
+            };
+
+            eventSource.onerror = () => {
+                showError('Connexion perdue. Tentative de reconnexion...');
+                eventSource.close();
+                setTimeout(fetchTokenAndConnect, 3000);
+            };
+
+            eventSource.onmessage = event => {
+                try {
+                    const data = JSON.parse(event.data);
+                    const msg = data.message;
+                    if (!msg) return;
+
+                    const isCurrentUser = msg.userId == userId;
+
+                    const messageElement = $('<div></div>')
+                        .addClass('d-flex mb-1')
+                        .addClass(isCurrentUser ? 'justify-content-end' : 'justify-content-start');
+
+                    const timeElement = $('<div></div>')
+                        .addClass('small text-muted me-2')
+                        .css({ 'min-width': '40px', 'text-align': 'center' })
+                        .text(new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }));
+
+                    const contentElement = $('<div></div>')
+                        .addClass('p-2 rounded-3')
+                        .addClass(isCurrentUser ? 'bg-primary text-white' : 'bg-secondary bg-opacity-25 text-dark')
+                        .css('max-width', '75%')
+                        .text(msg.content);
+
+                    messageElement.append(timeElement, contentElement);
+                    $messagesContainer.append(messageElement);
+                    $messagesContainer.scrollTop($messagesContainer[0].scrollHeight);
+                } catch (e) {
+                    console.error('Erreur traitement message Mercure:', e);
+                }
+            };
+        }
+
+        function fetchTokenAndConnect() {
+            $.get(`/api/mercure-token?partner=${receiverId}`, function (response) {
+                if (response.success && response.token) {
+                    connectWithToken(response.token);
+                } else {
+                    const message = response.error || 'Impossible d\'obtenir un token Mercure.';
+                    showError(`Erreur : ${message}`);
+                }
+            }).fail(function (jqXHR) {
+                let errorMessage = 'Erreur lors de la récupération du token Mercure.';
+                if (jqXHR.responseJSON?.error) {
+                    errorMessage = `Erreur : ${jqXHR.responseJSON.error}`;
+                } else if (jqXHR.status) {
+                    errorMessage = `Erreur ${jqXHR.status} : ${jqXHR.statusText}`;
+                }
+
+                showError(errorMessage);
+            });
+        }
+
+        fetchTokenAndConnect();
     });
 </script>
 {% endblock %}

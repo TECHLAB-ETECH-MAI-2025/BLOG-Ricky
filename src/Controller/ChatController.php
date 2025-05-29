@@ -8,8 +8,8 @@ use App\Form\MessageForm;
 use App\Repository\UserRepository;
 use App\Repository\MessageRepository;
 use App\Service\MercureService;
+use App\Service\JWTService;
 use Doctrine\ORM\EntityManagerInterface;
-use Firebase\JWT\JWT;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -17,19 +17,23 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
 
-#[Route('/chat', name: 'chat_')]
 final class ChatController extends AbstractController
 {
     private MercureService $mercureService;
     private EntityManagerInterface $entityManager;
+    private JWTService $jwtService;
 
-    public function __construct(MercureService $mercureService, EntityManagerInterface $entityManager)
-    {
+    public function __construct(
+        MercureService $mercureService,
+        EntityManagerInterface $entityManager,
+        JWTService $jwtService
+    ) {
         $this->mercureService = $mercureService;
         $this->entityManager = $entityManager;
+        $this->jwtService = $jwtService;
     }
 
-    #[Route('/', name: 'list')]
+    #[Route('/chat/', name: 'chat_list')]
     public function list(UserRepository $userRepository): Response
     {
         /** @var User $currentUser */
@@ -50,7 +54,7 @@ final class ChatController extends AbstractController
         ]);
     }
 
-    #[Route('/{receiverId}', name: 'index', requirements: ['receiverId' => '\d+'])]
+    #[Route('/chat/{receiverId}', name: 'chat_index', requirements: ['receiverId' => '\d+'])]
     public function index(
         int $receiverId,
         MessageRepository $messageRepository,
@@ -90,7 +94,7 @@ final class ChatController extends AbstractController
         ]);
     }
 
-    #[Route('/messages', name: 'messages', methods: ['GET'])]
+    #[Route('/chat/messages', name: 'chat_messages', methods: ['GET'])]
     public function messages(
         Request $request,
         MessageRepository $messageRepository
@@ -98,17 +102,26 @@ final class ChatController extends AbstractController
         /** @var User $currentUser */
         $currentUser = $this->getUser();
         if (!$currentUser instanceof UserInterface) {
-            return new Response('Non autorisé', 403);
+            return $this->json([
+                'success' => false,
+                'error' => 'Non autorisé',
+            ], 403);
         }
 
         $receiverId = (int) $request->query->get('receiver');
-        if ($receiverId === 0) {
-            return new Response('Paramètre invalide', 400);
+        if ($receiverId <= 0) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Paramètre invalide',
+            ], 400);
         }
 
         $receiver = $this->entityManager->getRepository(User::class)->find($receiverId);
         if (!$receiver) {
-            return new Response('Utilisateur introuvable', 404);
+            return $this->json([
+                'success' => false,
+                'error' => 'Utilisateur introuvable',
+            ], 404);
         }
 
         $messages = $messageRepository->findConversation($currentUser->getId(), $receiverId);
@@ -119,80 +132,92 @@ final class ChatController extends AbstractController
         ]);
     }
 
-    #[Route('/send', name: 'send', methods: ['POST'])]
+    #[Route('/api/chat/send', name: 'chat_send', methods: ['POST'])]
     public function sendMessage(Request $request): JsonResponse
     {
-        /** @var User $currentUser */
-        $currentUser = $this->getUser();
-        if (!$currentUser instanceof UserInterface) {
-            return new JsonResponse(['error' => 'Non autorisé'], 403);
+        try {
+            /** @var User $currentUser */
+            $currentUser = $this->getUser();
+            if (!$currentUser instanceof UserInterface) {
+                return $this->json(['success' => false, 'error' => 'Authentification requise.'], 403);
+            }
+
+            $content = trim((string) $request->request->get('content'));
+            $receiverId = (int) $request->request->get('receiver');
+
+            if ($receiverId <= 0) {
+                return $this->json(['success' => false, 'error' => 'ID de destinataire invalide.'], 400);
+            }
+
+            if ($receiverId === $currentUser->getId()) {
+                return $this->json(['success' => false, 'error' => 'Vous ne pouvez pas vous envoyer un message.'], 400);
+            }
+
+            if (empty($content)) {
+                return $this->json(['success' => false, 'error' => 'Le message est vide.'], 400);
+            }
+
+            $receiver = $this->entityManager->getRepository(User::class)->find($receiverId);
+            if (!$receiver) {
+                return $this->json(['success' => false, 'error' => 'Destinataire introuvable.'], 404);
+            }
+
+            $message = new Message();
+            $message->setSender($currentUser);
+            $message->setReceiver($receiver);
+            $message->setContent($content);
+            $message->setCreatedAt(new \DateTimeImmutable());
+
+            $this->entityManager->persist($message);
+            $this->entityManager->flush();
+
+            // Envoi via MercureService (publication privée sécurisée)
+            $this->mercureService->publishChatMessage(
+                $currentUser->getId(),
+                $receiverId,
+                [
+                    'id' => $message->getId(),
+                    'content' => $message->getContent(),
+                    'userId' => $currentUser->getId(),
+                    'username' => $currentUser->getFullName(),
+                    'createdAt' => $message->getCreatedAt()->format(DATE_ATOM),
+                ]
+            );
+
+            return $this->json([
+                'success' => true,
+                'message' => 'Message envoyé.',
+                'data' => [
+                    'id' => $message->getId(),
+                    'createdAt' => $message->getCreatedAt()->format(DATE_ATOM),
+                ]
+            ]);
+        } catch (\Throwable $e) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Une erreur inattendue est survenue.',
+                'details' => $e->getMessage(),
+            ], 500);
         }
-
-        $content = trim((string) $request->request->get('content'));
-        $receiverId = (int) $request->request->get('receiver');
-
-        if ($content === '' || $receiverId === 0) {
-            return new JsonResponse(['error' => 'Contenu ou destinataire manquant'], 400);
-        }
-
-        $receiver = $this->entityManager->getRepository(User::class)->find($receiverId);
-        if (!$receiver) {
-            return new JsonResponse(['error' => 'Destinataire introuvable'], 404);
-        }
-
-        $message = new Message();
-        $message->setSender($currentUser);
-        $message->setReceiver($receiver);
-        $message->setContent($content);
-        $message->setCreatedAt(new \DateTimeImmutable());
-
-        $this->entityManager->persist($message);
-        $this->entityManager->flush();
-
-        // Publier le message via Mercure
-        $this->mercureService->publishChatMessage($currentUser->getId(), $receiverId, [
-            'id' => $message->getId(),
-            'content' => $message->getContent(),
-            'userId' => $currentUser->getId(),
-            'username' => $currentUser->getFullName(),
-            'createdAt' => $message->getCreatedAt()->format('c'),
-        ]);
-
-        return new JsonResponse(['success' => true]);
     }
 
-    #[Route('/mercure-token', name: 'mercure_token', methods: ['GET'])]
-    public function getMercureToken(): JsonResponse
+    #[Route('/api/mercure-token', name: 'chat_token', methods: ['GET'])]
+    public function getMercureToken(Request $request): JsonResponse
     {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
         if (!$currentUser instanceof UserInterface) {
-            return new JsonResponse(['error' => 'Non autorisé'], 403);
+            return $this->json(['success' => false, 'error' => 'Non autorisé'], 403);
         }
 
-        $token = $this->generateMercureToken([
-            "user/{$currentUser->getId()}",
-            "chat/{$currentUser->getId()}/*",
-            "chat/*",
-        ]);
+        $partnerId = (int) $request->query->get('partner');
 
-        return new JsonResponse(['token' => $token]);
-    }
+        if ($partnerId <= 0) {
+            return $this->json(['success' => false, 'error' => 'ID du partenaire requis.'], 400);
+        }
 
-    private function generateMercureToken(array $subscribe = [], array $publish = []): string
-    {
-        $payload = [
-            'mercure' => [
-                'subscribe' => $subscribe,
-                'publish' => $publish,
-            ],
-            // exp: time() + 3600, // optionnel, expiration du token dans 1h
-        ];
+        $token = $this->jwtService->generateChatToken($currentUser->getId(), $partnerId);
 
-        return JWT::encode(
-            $payload,
-            $this->getParameter('mercure.jwt_secret'),
-            'HS256'
-        );
+        return $this->json(['success' => true, 'token' => $token]);
     }
 }
