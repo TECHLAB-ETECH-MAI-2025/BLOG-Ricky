@@ -186,7 +186,7 @@
         }
 
         function fetchTokenAndConnect() {
-            $.get(`/api/mercure-token?partner=${receiverId}`, function (response) {
+            $.get(`/api/chat/mercure-token?partner=${receiverId}`, function (response) {
                 if (response.success && response.token) {
                     connectWithToken(response.token);
                 } else {

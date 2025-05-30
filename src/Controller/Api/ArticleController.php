@@ -2,7 +2,6 @@
 
 namespace App\Controller\Api;
 
-use App\Entity\User;
 use App\Entity\Article;
 use App\Entity\ArticleLike;
 use App\Entity\Comment;
