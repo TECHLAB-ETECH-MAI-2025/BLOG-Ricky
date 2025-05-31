@@ -40,7 +40,11 @@ class ArticleRepository extends ServiceEntityRepository
             ->addSelect('c')
             ->addSelect('COUNT(DISTINCT com.id) AS HIDDEN commentsCount')
             ->addSelect('COUNT(DISTINCT l.id) AS HIDDEN likesCount')
-            ->groupBy('a.id');
+            // Groupes nécessaires pour respecter ONLY_FULL_GROUP_BY
+            ->groupBy('a.id')
+            ->addGroupBy('a.title')
+            ->addGroupBy('a.createdAt')
+            ->addGroupBy('c.id');
 
         // Appliquer la recherche si nécessaire
         if ($search) {
