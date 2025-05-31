@@ -1,6 +1,6 @@
 # Symfony Chat App avec Mercure en Docker
 
-Cette application est un chat en temps réel développé avec **Symfony**, **Mercure**, **MySQL** et **Docker**.
+Cette application est un système de messagerie en temps réel développé avec **Symfony**, **Mercure**, **MySQL** et **Docker**.
 
 ---
 
@@ -36,13 +36,6 @@ composer install
 
 ---
 
-## 💻 Accès
-
-- Application Symfony : http://localhost:8000
-- Mercure Hub (dev/debug uniquement) : http://localhost:3001/.well-known/mercure
-
----
-
 ## ⚙️ Initialisation de la base de données
 
 ### 1. Entrer dans le conteneur Symfony
@@ -57,11 +50,40 @@ docker exec -it <nom_du_conteneur_symfony> bash
 php bin/console doctrine:migrations:migrate
 ```
 
-### 3. Charger les données de test/fixtures (si existantes)
+### 3. Créer la table pour les messages asynchrones
+
+```bash
+php bin/console messenger:setup-transports
+```
+
+### 4. Charger les données de test/fixtures
 
 ```bash
 php bin/console doctrine:fixtures:load
 ```
+
+---
+
+## 📨 Traitement asynchrone des messages avec Symfony Messenger
+
+L’envoi de messages dans cette application se fait de manière **asynchrone** grâce à **Symfony Messenger**.  
+Lorsque tu envoies un message via l’API, celui-ci est placé dans une **file d’attente**, puis un **worker** l’exécute en arrière-plan et publie le message via **Mercure**.
+
+### ▶️ Lancer le worker manuellement (en développement)
+
+Dans le conteneur Symfony :
+
+```bash
+php bin/console messenger:consume async
+```
+
+En mode verbeux (utile pour voir ce qu’il se passe) :
+
+```bash
+php bin/console messenger:consume async -vv
+```
+
+> ℹ️ Si le worker **n’est pas lancé**, les messages seront stockés dans la table `messenger_messages` mais **ne seront pas diffusés en temps réel** tant que le worker ne tourne pas.
 
 ---
 
@@ -74,14 +96,23 @@ docker compose down -v --remove-orphans
 docker compose up -d --build
 ```
 
-Ensuite, relancer les commandes à l’intérieur du conteneur :
+Ensuite, relancer les commandes dans le conteneur :
 
 ```bash
 docker exec -it <nom_du_conteneur_symfony> bash
 composer install
 php bin/console doctrine:migrations:migrate
+php bin/console messenger:setup-transports
 php bin/console doctrine:fixtures:load
+php bin/console messenger:consume async -vv
 ```
+
+---
+
+## 💻 Accès
+
+- Application Symfony : http://localhost:8000
+- Mercure Hub (dev/debug uniquement) : http://localhost:3001/.well-known/mercure
 
 ---
 
@@ -101,8 +132,9 @@ php bin/console doctrine:fixtures:load
 
 ## ✅ Vérification
 
-- Messages s'affichent **en temps réel** après envoi, sans recharger la page.
-- Les utilisateurs abonnés au même chat reçoivent les messages via **Mercure**.
+- Les messages s’affichent **en temps réel** sans recharger la page.
+- Si le worker est actif, le handler `MercureChatMessageHandler` publie les messages via **Mercure**.
+- Si le worker est inactif, les messages restent en attente dans la file `messenger_messages`.
 
 ---
 

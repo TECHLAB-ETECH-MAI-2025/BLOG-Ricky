@@ -1,0 +1,12 @@
+framework:
+    messenger:
+        default_bus: messenger.bus.default
+
+        transports:
+            async:
+                dsn: 'doctrine://default'
+                options:
+                    table_name: messenger_messages
+
+        routing:
+            'App\Message\MercureChatMessage': async

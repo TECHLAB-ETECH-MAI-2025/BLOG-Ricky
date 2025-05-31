@@ -1,6 +1,6 @@
 <?php
 
-namespace App\MessageHandler;
+namespace App\Handler;
 
 use App\Message\MercureChatMessage;
 use App\Service\MercureService;
