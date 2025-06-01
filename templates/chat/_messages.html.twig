@@ -8,5 +8,7 @@
                 {{ message.content }}
             </div>
         </div>
+    {% else %}
+        <p class="text-muted" id="no-messages-placeholder">Aucun message pour l’instant.</p>
     {% endfor %}
 </div>
