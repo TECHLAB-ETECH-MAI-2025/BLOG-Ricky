@@ -1,0 +1,17 @@
+{
+  "name": "Symfony Docker",
+  "dockerComposeFile": [
+    "../docker-compose.yml"
+  ],
+  "service": "symfony",
+  "workspaceFolder": "/var/www/html",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "php.validate.executablePath": "/usr/local/bin/php",
+        "php.executablePath": "/usr/local/bin/php",
+        "intelephense.environment.phpVersion": "8.3"
+      }
+    }
+  }
+}
