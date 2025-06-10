@@ -13,6 +13,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Core\User\UserInterface;
+use App\Service\NotificationService;
 
 #[Route('/api/chat', name: 'api_chat_')]
 final class ChatController extends AbstractController
@@ -113,5 +114,95 @@ final class ChatController extends AbstractController
         $token = $this->jwtService->generateChatToken($currentUser->getId(), $partnerId);
 
         return $this->json(['success' => true, 'token' => $token]);
+    }
+
+    // Génère un token Mercure pour l'utilisateur afin de s'abonner à ses notifications
+    #[Route('/notifications-stream', name: 'notifications_stream', methods: ['GET'])]
+    public function notificationsStream(Request $request, JWTService $jwtService): JsonResponse
+    {
+        try {
+            $userId = $request->query->get('userId');
+            if (empty($userId) || !is_numeric($userId)) {
+                return $this->json(['success' => false, 'error' => 'ID utilisateur invalide ou manquant.'], 400);
+            }
+
+            /** @var User $currentUser */
+            $currentUser = $this->getUser();
+            if (!$currentUser instanceof UserInterface) {
+                return $this->json(['success' => false, 'error' => 'Authentification requise.'], 403);
+            }
+
+            $token = $jwtService->generateMercureToken(
+                ["user/{$userId}/notifications"],
+                [],
+                $userId
+            );
+
+            return $this->json([
+                'success' => true,
+                'token' => $token,
+                'url' => 'http://localhost:3001/.well-known/mercure?topic=' . rawurlencode("user/{$userId}/notifications")
+            ]);
+        } catch (\Throwable $e) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Une erreur inattendue est survenue.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Récupère le nombre de messages non lus par expéditeur pour l'utilisateur connecté
+    #[Route('/unread-counts', name: 'unread_counts', methods: ['GET'])]
+    public function getUnreadCounts(NotificationService $notificationService): JsonResponse
+    {
+        try {
+            /** @var User $user */
+            $user = $this->getUser();
+            if (!$user instanceof UserInterface) {
+                return $this->json(['success' => false, 'error' => 'Authentification requise.'], 403);
+            }
+
+            $counts = $notificationService->getUnreadCounts($user->getId());
+
+            return $this->json([
+                'success' => true,
+                'counts' => $counts
+            ]);
+        } catch (\Throwable $e) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Une erreur inattendue est survenue.',
+                'details' => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    // Marque la conversation comme lue et met à jour les notifications
+    #[Route('/mark-as-read', name: 'mark_as_read', methods: ['POST'])]
+    public function markAsRead(Request $request, NotificationService $notificationService): JsonResponse
+    {
+        try {
+            /** @var User $currentUser */
+            $currentUser = $this->getUser();
+            if (!$currentUser instanceof UserInterface) {
+                return $this->json(['success' => false, 'error' => 'Authentification requise.'], 403);
+            }
+
+            $senderId = (int) $request->request->get('senderId');
+            if ($senderId <= 0) {
+                return $this->json(['success' => false, 'error' => 'ID de l’expéditeur invalide.'], 400);
+            }
+
+            $notificationService->markAsRead($senderId, $currentUser->getId());
+
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->json([
+                'success' => false,
+                'error' => 'Erreur lors du marquage comme lu.',
+                'details' => $e->getMessage()
+            ], 500);
+        }
     }
 }

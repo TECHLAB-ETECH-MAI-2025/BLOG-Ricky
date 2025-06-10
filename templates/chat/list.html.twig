@@ -3,12 +3,38 @@
 {% block title %}Démarrer une conversation{% endblock %}
 
 {% block body %}
+    <style>
+        .unread-count {
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.25em 0.6em;
+            border-radius: 9999px;
+            min-width: 24px;
+            text-align: center;
+            line-height: 1.2;
+            vertical-align: middle;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transform: translateY(-1px);
+            gap: 0.25em;
+        }
+
+        .unread-count i {
+            font-size: 0.9rem;
+            line-height: 1;
+        }
+    </style>
+
     <h2 class="mb-4">Utilisateurs disponibles</h2>
 
-    <ul class="list-group">
+    <ul class="list-group" id="users-list">
         {% for user in users %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                <span><i class="bi bi-person-circle me-2"></i>{{ user.fullName }}</span>
+            <li class="list-group-item d-flex justify-content-between align-items-center" data-user-id="{{ user.id }}">
+                <div>
+                    <i class="bi bi-person-circle me-2"></i>{{ user.fullName }}
+                    <span class="badge bg-danger unread-count ms-2" id="unread-{{ user.id }}" style="display: none;"></span>
+                </div>
                 <a href="{{ path('chat_index', {'receiverId': user.id}) }}" class="btn btn-outline-primary">
                     <i class="bi bi-chat-dots me-1"></i> Discuter
                 </a>
@@ -17,4 +43,56 @@
             <li class="list-group-item">Aucun autre utilisateur trouvé.</li>
         {% endfor %}
     </ul>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const currentUserId = {{ app.user.id }};
+            
+            fetch(`/api/chat/notifications-stream?userId=${currentUserId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const url = new URL(data.url);
+                        document.cookie = 'mercureAuthorization=' + data.token + '; path=/.well-known/mercure; samesite=strict';
+
+                        const eventSource = new EventSource(url.toString(), { withCredentials: true });
+
+                        eventSource.onmessage = function(event) {
+                            const eventData = JSON.parse(event.data);
+                            updateUnreadBadges(eventData.counts);
+                        };
+
+                        eventSource.onerror = function(err) {
+                            console.error('Erreur EventSource:', err);
+                            eventSource.close();
+                        };
+                    } else {
+                        console.error('Erreur récupération token Mercure:', data);
+                    }
+                });
+
+            fetch(`/api/chat/unread-counts`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updateUnreadBadges(data.counts);
+                    }
+                });
+        });
+
+        function updateUnreadBadges(counts) {
+            counts.forEach(item => {
+                const badge = document.getElementById(`unread-${item.senderId}`);
+                if (badge) {
+                    if (item.unreadCount > 0) {
+                        badge.innerHTML = `<i class="bi bi-envelope-fill me-1"></i>${item.unreadCount}`;
+                        badge.style.display = 'inline-flex';
+                    } else {
+                        badge.style.display = 'none';
+                        badge.textContent = '';
+                    }
+                }
+            });
+        }
+    </script>
 {% endblock %}

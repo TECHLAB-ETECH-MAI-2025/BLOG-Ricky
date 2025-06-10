@@ -9,10 +9,10 @@ use App\Repository\UserRepository;
 use App\Repository\MessageRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
+use App\Service\NotificationService;
 
 #[IsGranted('ROLE_USER')]
 #[Route('/chat', name: 'chat_')]
@@ -44,7 +44,7 @@ final class ChatController extends AbstractController
     public function index(
         int $receiverId,
         MessageRepository $messageRepository,
-        Request $request
+        NotificationService $notificationService,
     ): Response {
         /** @var User $currentUser */
         $currentUser = $this->getUser();
@@ -55,22 +55,13 @@ final class ChatController extends AbstractController
             return $this->redirectToRoute('chat_list');
         }
 
+        // Marque les messages du receiver comme lus par l'utilisateur courant et envoie la notif Mercure
+        $notificationService->markAsRead($receiverId, $currentUser->getId());
+
         $messages = $messageRepository->findConversation($currentUser->getId(), $receiverId);
 
         $message = new Message();
         $form = $this->createForm(MessageForm::class, $message);
-        $form->handleRequest($request);
-
-        if ($form->isSubmitted() && $form->isValid()) {
-            $message->setSender($currentUser);
-            $message->setReceiver($receiver);
-            $message->setCreatedAt(new \DateTimeImmutable());
-
-            $this->entityManager->persist($message);
-            $this->entityManager->flush();
-
-            return $this->redirectToRoute('chat_index', ['receiverId' => $receiverId]);
-        }
 
         return $this->render('chat/index.html.twig', [
             'messages' => $messages,

@@ -16,13 +16,6 @@ class MessageRepository extends ServiceEntityRepository
         parent::__construct($registry, Message::class);
     }
 
-    /**
-     * Récupère tous les messages entre deux utilisateurs, triés par date croissante.
-     *
-     * @param int $userId1 ID du premier utilisateur (ex : utilisateur connecté)
-     * @param int $userId2 ID du second utilisateur (ex : destinataire)
-     * @return Message[]
-     */
     public function findConversation(int $userId1, int $userId2): array
     {
         return $this->createQueryBuilder('m')
@@ -32,5 +25,31 @@ class MessageRepository extends ServiceEntityRepository
             ->orderBy('m.createdAt', 'ASC')
             ->getQuery()
             ->getResult();
+    }
+
+    public function getUnreadCountsPerSender(int $receiverId): array
+    {
+        return $this->createQueryBuilder('m')
+            ->select('IDENTITY(m.sender) as senderId, COUNT(m.id) as unreadCount')
+            ->where('m.receiver = :receiver')
+            ->andWhere('m.isRead = false')
+            ->setParameter('receiver', $receiverId)
+            ->groupBy('m.sender')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function markConversationAsRead(int $senderId, int $receiverId): void
+    {
+        $this->createQueryBuilder('m')
+            ->update()
+            ->set('m.isRead', true)
+            ->where('m.sender = :sender')
+            ->andWhere('m.receiver = :receiver')
+            ->andWhere('m.isRead = false')
+            ->setParameter('sender', $senderId)
+            ->setParameter('receiver', $receiverId)
+            ->getQuery()
+            ->execute();
     }
 }
