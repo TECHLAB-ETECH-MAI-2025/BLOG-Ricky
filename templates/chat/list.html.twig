@@ -2,6 +2,14 @@
 
 {% block title %}Démarrer une conversation{% endblock %}
 
+{% block javascripts %}
+    {{ parent() }}
+    <script>
+        window.CURRENT_USER_ID = {{ app.user.id }};
+    </script>
+    {{ encore_entry_script_tags('notification') }}
+{% endblock %}
+
 {% block body %}
     <style>
         .unread-count {
@@ -43,56 +51,4 @@
             <li class="list-group-item">Aucun autre utilisateur trouvé.</li>
         {% endfor %}
     </ul>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const currentUserId = {{ app.user.id }};
-            
-            fetch(`/api/chat/notifications-stream?userId=${currentUserId}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        const url = new URL(data.url);
-                        document.cookie = 'mercureAuthorization=' + data.token + '; path=/.well-known/mercure; samesite=strict';
-
-                        const eventSource = new EventSource(url.toString(), { withCredentials: true });
-
-                        eventSource.onmessage = function(event) {
-                            const eventData = JSON.parse(event.data);
-                            updateUnreadBadges(eventData.counts);
-                        };
-
-                        eventSource.onerror = function(err) {
-                            console.error('Erreur EventSource:', err);
-                            eventSource.close();
-                        };
-                    } else {
-                        console.error('Erreur récupération token Mercure:', data);
-                    }
-                });
-
-            fetch(`/api/chat/unread-counts`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        updateUnreadBadges(data.counts);
-                    }
-                });
-        });
-
-        function updateUnreadBadges(counts) {
-            counts.forEach(item => {
-                const badge = document.getElementById(`unread-${item.senderId}`);
-                if (badge) {
-                    if (item.unreadCount > 0) {
-                        badge.innerHTML = `<i class="bi bi-envelope-fill me-1"></i>${item.unreadCount}`;
-                        badge.style.display = 'inline-flex';
-                    } else {
-                        badge.style.display = 'none';
-                        badge.textContent = '';
-                    }
-                }
-            });
-        }
-    </script>
 {% endblock %}

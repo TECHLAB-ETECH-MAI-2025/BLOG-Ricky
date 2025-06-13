@@ -2,7 +2,6 @@
 
 namespace App\Controller\Api;
 
-use App\Entity\Article;
 use App\Entity\ArticleLike;
 use App\Entity\Comment;
 use App\Form\CommentForm;
@@ -18,6 +17,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route('/api/article', name: 'api_article_')]
 final class ArticleController extends AbstractController
 {
+    // Retourne une liste d’articles pour l’affichage dans un DataTable
     #[Route('/list', name: 'list', methods: ['GET'])]
     public function list(Request $request, ArticleRepository $articleRepository): JsonResponse
     {
@@ -65,16 +65,20 @@ final class ArticleController extends AbstractController
             'recordsTotal' => $results['totalCount'],
             'recordsFiltered' => $results['filteredCount'],
             'data' => $data
-        ]);
+        ], Response::HTTP_OK);
     }
 
+    // Recherche des articles par titre
     #[Route('/search', name: 'search', methods: ['GET'])]
     public function search(Request $request, ArticleRepository $articleRepository): JsonResponse
     {
         $query = $request->query->get('q', '');
 
         if (strlen($query) < 2) {
-            return new JsonResponse(['results' => []]);
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'La requête doit contenir au moins 2 caractères.'
+            ], Response::HTTP_BAD_REQUEST);
         }
 
         $articles = $articleRepository->searchByTitle($query, 10);
@@ -88,11 +92,12 @@ final class ArticleController extends AbstractController
             ];
         }
 
-        return new JsonResponse(['results' => $results]);
+        return new JsonResponse(['results' => $results], Response::HTTP_OK);
     }
 
+    // Ajoute un commentaire à un article spécifique
     #[Route('/{id}/comment', name: 'comment', methods: ['POST'])]
-    public function addComment(Article $article, Request $request, EntityManagerInterface $entityManager): JsonResponse
+    public function addComment(int $id, Request $request, EntityManagerInterface $entityManager, ArticleRepository $articleRepository): JsonResponse
     {
         $user = $this->getUser();
 
@@ -100,7 +105,15 @@ final class ArticleController extends AbstractController
             return new JsonResponse([
                 'success' => false,
                 'error' => 'Vous devez être connecté pour commenter.'
-            ], 401);
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $article = $articleRepository->find($id);
+        if (!$article) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Article non trouvé.'
+            ], Response::HTTP_NOT_FOUND);
         }
 
         $comment = new Comment();
@@ -113,8 +126,15 @@ final class ArticleController extends AbstractController
         if ($form->isSubmitted() && $form->isValid()) {
             $comment->setUser($user);
 
-            $entityManager->persist($comment);
-            $entityManager->flush();
+            try {
+                $entityManager->persist($comment);
+                $entityManager->flush();
+            } catch (\Throwable $e) {
+                return new JsonResponse([
+                    'success' => false,
+                    'error' => 'Une erreur est survenue lors de l\'enregistrement.'
+                ], Response::HTTP_INTERNAL_SERVER_ERROR);
+            }
 
             return new JsonResponse([
                 'success' => true,
@@ -122,7 +142,7 @@ final class ArticleController extends AbstractController
                     'comment' => $comment
                 ]),
                 'commentsCount' => $article->getComments()->count()
-            ]);
+            ], Response::HTTP_OK);
         }
 
         $errors = [];
@@ -136,11 +156,12 @@ final class ArticleController extends AbstractController
         ], Response::HTTP_BAD_REQUEST);
     }
 
+    // Permet de liker ou unliker un article
     #[Route('/{id}/like', name: 'like', methods: ['POST'])]
     public function likeArticle(
-        Article $article,
-        Request $request,
+        int $id,
         EntityManagerInterface $entityManager,
+        ArticleRepository $articleRepository,
         ArticleLikeRepository $likeRepository
     ): JsonResponse {
         $user = $this->getUser();
@@ -149,7 +170,15 @@ final class ArticleController extends AbstractController
             return new JsonResponse([
                 'success' => false,
                 'message' => 'Vous devez être connecté pour liker un article.'
-            ], 401);
+            ], Response::HTTP_UNAUTHORIZED);
+        }
+
+        $article = $articleRepository->find($id);
+        if (!$article) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Article non trouvé.'
+            ], Response::HTTP_NOT_FOUND);
         }
 
         $existingLike = $likeRepository->findOneBy([
@@ -157,29 +186,36 @@ final class ArticleController extends AbstractController
             'user' => $user
         ]);
 
-        if ($existingLike) {
-            $entityManager->remove($existingLike);
+        try {
+            if ($existingLike) {
+                $entityManager->remove($existingLike);
+                $entityManager->flush();
+
+                return new JsonResponse([
+                    'success' => true,
+                    'liked' => false,
+                    'likesCount' => $article->getLikes()->count()
+                ], Response::HTTP_OK);
+            }
+
+            $like = new ArticleLike();
+            $like->setArticle($article);
+            $like->setUser($user);
+            $like->setCreatedAt(new \DateTimeImmutable());
+
+            $entityManager->persist($like);
             $entityManager->flush();
 
             return new JsonResponse([
                 'success' => true,
-                'liked' => false,
+                'liked' => true,
                 'likesCount' => $article->getLikes()->count()
-            ]);
+            ], Response::HTTP_OK);
+        } catch (\Throwable $e) {
+            return new JsonResponse([
+                'success' => false,
+                'error' => 'Une erreur est survenue lors de l\'opération.'
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
-
-        $like = new ArticleLike();
-        $like->setArticle($article);
-        $like->setUser($user);
-        $like->setCreatedAt(new \DateTimeImmutable());
-
-        $entityManager->persist($like);
-        $entityManager->flush();
-
-        return new JsonResponse([
-            'success' => true,
-            'liked' => true,
-            'likesCount' => $article->getLikes()->count()
-        ]);
     }
 }

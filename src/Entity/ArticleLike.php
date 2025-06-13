@@ -4,6 +4,7 @@ namespace App\Entity;
 
 use App\Repository\ArticleLikeRepository;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ArticleLikeRepository::class)]
 class ArticleLike
@@ -14,14 +15,17 @@ class ArticleLike
     private ?int $id = null;
 
     #[ORM\Column]
+    #[Assert\NotNull(message: 'La date de création est requise.')]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToOne(inversedBy: 'likes')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotNull(message: 'Un article est requis pour ce like.')]
     private ?Article $article = null;
 
     #[ORM\ManyToOne(inversedBy: 'articleLikes')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotNull(message: 'Un utilisateur est requis pour ce like.')]
     private ?User $user = null;
 
     public function __construct()

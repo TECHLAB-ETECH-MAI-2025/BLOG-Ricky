@@ -5,6 +5,7 @@ namespace App\Entity;
 use App\Repository\MessageRepository;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: MessageRepository::class)]
 class Message
@@ -16,16 +17,24 @@ class Message
 
     #[ORM\ManyToOne(inversedBy: 'sentMessages')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotNull(message: 'L\'expéditeur est requis.')]
     private ?User $sender = null;
 
     #[ORM\ManyToOne(inversedBy: 'receivedMessages')]
     #[ORM\JoinColumn(nullable: false)]
+    #[Assert\NotNull(message: 'Le destinataire est requis.')]
     private ?User $receiver = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Assert\NotBlank(message: 'Le message ne peut pas être vide.')]
+    #[Assert\Length(
+        max: 5000,
+        maxMessage: 'Le message ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $content = null;
 
     #[ORM\Column]
+    #[Assert\NotNull(message: 'La date de création est requise.')]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\Column(type: 'boolean', options: ['default' => false])]

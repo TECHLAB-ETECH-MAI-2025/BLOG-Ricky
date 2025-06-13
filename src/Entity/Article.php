@@ -7,6 +7,7 @@ use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use Symfony\Component\Validator\Constraints as Assert;
 
 #[ORM\Entity(repositoryClass: ArticleRepository::class)]
 class Article
@@ -17,15 +18,30 @@ class Article
     private ?int $id = null;
 
     #[ORM\Column(length: 255)]
+    #[Assert\NotBlank(message: 'Le titre est requis.')]
+    #[Assert\Length(
+        max: 255,
+        maxMessage: 'Le titre ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $title = null;
 
     #[ORM\Column(type: Types::TEXT)]
+    #[Assert\NotBlank(message: 'Le contenu de l\'article est requis.')]
+    #[Assert\Length(
+        max: 10000,
+        maxMessage: 'Le contenu ne peut pas dépasser {{ limit }} caractères.'
+    )]
     private ?string $content = null;
 
     #[ORM\Column]
+    #[Assert\NotNull(message: 'La date de création est requise.')]
     private ?\DateTimeImmutable $createdAt = null;
 
     #[ORM\ManyToMany(targetEntity: Category::class, inversedBy: 'articles')]
+    #[Assert\Count(
+        min: 1,
+        minMessage: 'Veuillez sélectionner au moins une catégorie.'
+    )]
     private Collection $categories;
 
     #[ORM\OneToMany(targetEntity: Comment::class, mappedBy: 'article', cascade: ['remove'])]

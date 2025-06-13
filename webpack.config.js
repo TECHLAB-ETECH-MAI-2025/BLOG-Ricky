@@ -14,9 +14,11 @@ Encore
     /*
      * ENTRY CONFIG
      */
-    .addEntry('app', './assets/app.js')
-    .addEntry('article', './assets/article.js')
-    .addEntry('article_list', './assets/article_list.js')
+    .addEntry('app', './assets/js/app.js')
+    .addEntry('article', './assets/js/article.js')
+    .addEntry('article_list', './assets/js/article_list.js')
+    .addEntry('chat', './assets/js/chat.js')
+    .addEntry('notification', './assets/js/notification.js')
 
     // When enabled, Webpack "splits" your files into smaller pieces for greater optimization.
     .splitEntryChunks()

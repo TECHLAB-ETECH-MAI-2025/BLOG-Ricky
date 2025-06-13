@@ -4,6 +4,7 @@
 # Put parameters here that don't need to change on each machine where the app is deployed
 # https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
+    mercure_public_url: '%env(MERCURE_PUBLIC_URL)%'
 
 services:
     # default configuration for services in *this* file
@@ -20,7 +21,7 @@ services:
             - '../src/Entity/'
             - '../src/Kernel.php'
 
-    # JWTService : injection du secret Mercure JWT
+    # injection of the Mercure JWT secret
     App\Service\JWTService:
         arguments:
             $mercureJwtSecret: '%env(MERCURE_JWT_SECRET)%'

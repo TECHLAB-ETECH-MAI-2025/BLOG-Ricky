@@ -10,6 +10,8 @@ services:
     ports:
       - "8000:80"
     environment:
+      APP_ENV: dev
+      APP_SECRET: 76ccf39ecd4319f4e10a3a62b786439a
       DATABASE_URL: mysql://symfony:symfony@database:3306/symfony_app?serverVersion=8.0
       MERCURE_URL: http://mercure/.well-known/mercure
       MERCURE_PUBLIC_URL: http://localhost:3001/.well-known/mercure
